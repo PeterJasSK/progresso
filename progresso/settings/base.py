@@ -109,4 +109,10 @@ TIME_ZONE = "UTC"
 
 STATIC_URL = "static/"
 
+# Media (P3): used only by the Blob client's local-dev filesystem fallback,
+# active when ``BLOB_READ_WRITE_TOKEN`` is unset (§5.2/§5.8). Prod sets the token
+# and never touches the local FS. ``media/`` is gitignored (no data files in git).
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

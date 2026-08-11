@@ -26,5 +26,9 @@ class CustomUserAdmin(UserAdmin):
 class MeasurementAdmin(admin.ModelAdmin):
     """Admin spot-check surface (outside the SPA, epic §3)."""
 
-    list_display = ("user", "created_at", "weight", "unit_system")
+    list_display = ("user", "created_at", "weight", "unit_system", "has_photo")
     list_filter = ("unit_system",)
+
+    @admin.display(boolean=True, description="Photo")
+    def has_photo(self, obj: Measurement) -> bool:
+        return bool(obj.photo_url)

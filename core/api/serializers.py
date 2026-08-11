@@ -11,6 +11,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from rest_framework import serializers
 
 from core.models import CustomUser, Measurement, Role, UnitSystem
+from core.services import blob_cleanup, photos
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -102,12 +103,28 @@ class MeasurementSerializer(serializers.ModelSerializer):
     ``user`` is read-only — ownership is never client-set; the viewset forces it
     to ``request.user`` on create (mvp-routes.md §C). All error ``detail`` values
     are translation *keys* (epic Q6): ``out_of_range``, ``no_values``,
-    ``invalid_unit_system``.
+    ``invalid_unit_system``, ``invalid_image``, ``photo_too_large``.
+
+    Progress photo (P3): ``photo`` is a write-only upload; ``photo_url`` and
+    ``thumbnail_url`` are read-only Blob public URLs carried in every payload
+    (AC-6). The upload is validated + thumbnailed + pushed to Blob by
+    :mod:`core.services.photos` on create/update — the view stays thin (§5.4).
     """
 
     # Plain CharField (not ChoiceField) so a bad/blank choice routes through our
     # own translatable key instead of DRF's default English "not a valid choice".
     unit_system = serializers.CharField(required=False)
+
+    # Write-only upload. DRF's ImageField already rejects non-images under the
+    # ``invalid_image`` key; the override maps that key to a bare translation key
+    # (epic Q6) instead of DRF's English prose. ``photos.process_upload`` is the
+    # authoritative validator (size cap + normalize + thumbnail).
+    photo = serializers.ImageField(
+        write_only=True,
+        required=False,
+        allow_null=True,
+        error_messages={"invalid_image": "invalid_image"},
+    )
 
     class Meta:
         model = Measurement
@@ -126,8 +143,11 @@ class MeasurementSerializer(serializers.ModelSerializer):
             "body_fat_pct",
             "measured_at",
             "created_at",
+            "photo",
+            "photo_url",
+            "thumbnail_url",
         )
-        read_only_fields = ("user", "created_at")
+        read_only_fields = ("user", "created_at", "photo_url", "thumbnail_url")
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -219,3 +239,38 @@ class MeasurementSerializer(serializers.ModelSerializer):
         if creating:
             return None
         return getattr(self.instance, field)
+
+    def _process_photo(self, photo) -> tuple[str, str]:
+        """Upload via the photos service, mapping errors to i18n keys (§5.4)."""
+        owner_id = self.context["request"].user.pk
+        try:
+            return photos.process_upload(photo, owner_id=owner_id)
+        except photos.PhotoTooLarge:
+            raise serializers.ValidationError({"photo": "photo_too_large"})
+        except photos.InvalidImage:
+            raise serializers.ValidationError({"photo": "invalid_image"})
+
+    def create(self, validated_data: dict) -> Measurement:
+        photo = validated_data.pop("photo", None)
+        if photo is not None:
+            photo_url, thumbnail_url = self._process_photo(photo)
+            validated_data["photo_url"] = photo_url
+            validated_data["thumbnail_url"] = thumbnail_url
+        return super().create(validated_data)
+
+    def update(self, instance: Measurement, validated_data: dict) -> Measurement:
+        photo = validated_data.pop("photo", None)
+        # A PATCH without a photo leaves the existing one untouched (numbers-only
+        # edit still works — P2 behaviour preserved).
+        if photo is None:
+            return super().update(instance, validated_data)
+
+        old_urls = [instance.photo_url, instance.thumbnail_url]
+        photo_url, thumbnail_url = self._process_photo(photo)
+        validated_data["photo_url"] = photo_url
+        validated_data["thumbnail_url"] = thumbnail_url
+        instance = super().update(instance, validated_data)
+        # Delete the old blobs only after the new URLs are persisted, so a failed
+        # upload never orphans the record without an image (§5.4).
+        blob_cleanup.delete_blob_urls(old_urls)
+        return instance

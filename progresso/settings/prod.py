@@ -18,6 +18,11 @@ ALLOWED_HOSTS = [h for h in os.environ.get("ALLOWED_HOSTS", "").split(",") if h]
 if not os.environ.get("DATABASE_URL"):
     raise RuntimeError("DATABASE_URL is required in production.")
 
+# Blob token must be set in prod: the serverless FS is ephemeral, so the local
+# filesystem photo fallback (dev only) must never be reached here (P3, §11 Q1).
+if not os.environ.get("BLOB_READ_WRITE_TOKEN"):
+    raise RuntimeError("BLOB_READ_WRITE_TOKEN is required in production.")
+
 # Secure session/CSRF cookies over HTTPS (epic Q2).
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True

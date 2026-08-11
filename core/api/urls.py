@@ -21,6 +21,7 @@ _measurement_list = MeasurementViewSet.as_view(
 _measurement_detail = MeasurementViewSet.as_view(
     {"get": "retrieve", "patch": "partial_update", "delete": "destroy"}
 )
+_measurement_photos = MeasurementViewSet.as_view({"get": "photos"})
 
 urlpatterns = [
     path("auth/register", RegisterView.as_view(), name="auth-register"),
@@ -29,6 +30,10 @@ urlpatterns = [
     path("auth/logout", LogoutView.as_view(), name="auth-logout"),
     path("auth/me", MeView.as_view(), name="auth-me"),
     path("measurements", _measurement_list, name="measurement-list"),
+    # Literal ``photos`` before the pk route: it can't match ``<int:pk>`` anyway,
+    # but ordering it first keeps intent obvious and pre-empts a future non-int
+    # pk change (§5.7).
+    path("measurements/photos", _measurement_photos, name="measurement-photos"),
     path(
         "measurements/<int:pk>",
         _measurement_detail,

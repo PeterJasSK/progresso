@@ -12,6 +12,7 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
 from rest_framework import status, viewsets
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -101,6 +102,10 @@ class MeasurementViewSet(viewsets.ModelViewSet):
 
     serializer_class = MeasurementSerializer
     permission_classes = [IsAuthenticated, MeasurementAccessPermission]
+    # Accept the multipart photo POST/PATCH alongside JSON. DRF's global default
+    # already includes these; set them explicitly so the contract is legible and
+    # independent of settings (§5.6).
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_target_user(self, request: Request) -> CustomUser:
         """Resolve the user whose data is targeted — the ``CanAccessTarget``
@@ -129,3 +134,25 @@ class MeasurementViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer: MeasurementSerializer) -> None:
         # Owner is forced to the caller — any ``user`` in the body is ignored.
         serializer.save(user=self.request.user)
+
+    def photos(self, request: Request) -> Response:
+        """GET /measurements/photos?user=:id — the P7 compare-picker feed (AC-5).
+
+        Lists only measurements that have a photo, gated by the same
+        ``can_access`` predicate as ``list`` (``get_target_user`` +
+        :class:`MeasurementAccessPermission`). Payload already carries
+        ``photo_url``/``thumbnail_url`` + dates + id — everything the picker
+        needs. Bytes come straight from the Blob public URL (no proxy).
+        """
+        target = self.get_target_user(request)
+        queryset = (
+            Measurement.objects.filter(user=target)
+            .exclude(photo_url="")
+            .select_related("user")
+        )
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

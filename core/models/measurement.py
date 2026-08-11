@@ -6,12 +6,16 @@ kill garbage data (``5000 kg``; rebuild-analysis.md §2 #8).
 
 Shared model across the measurements epic:
 
-* P2 (this) — numeric fields, ``unit_system``, range validators, timestamps.
-* P3 — photo bytes + thumbnail fields + a save hook + blob delete-on-delete.
+* P2 — numeric fields, ``unit_system``, range validators, timestamps.
+* P3 (this) — progress-photo URL fields (full + thumbnail). Bytes live in Vercel
+  Blob, not the DB; the model holds only the resulting public URLs. Upload +
+  thumbnail happen at the serializer boundary; blob delete-on-delete is a
+  ``post_delete`` signal (``core/services/blob_cleanup.py``), not a ``save()``
+  override, so cascade deletes clean up too.
 * P4 — the ``bmi`` property and the derived/chart surface.
 
-P2 must leave the model open for those additions without a rewrite: no photo
-field, no ``bmi`` property here.
+Each plan must leave the model open for the next without a rewrite: no ``bmi``
+property here yet.
 """
 from __future__ import annotations
 
@@ -116,6 +120,15 @@ class Measurement(models.Model):
     # P4 charts plot on this. created_at: immutable server insert time.
     measured_at = models.DateField(default=timezone.localdate)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    # Progress photo (P3). Vercel Blob public URLs — full image + generated
+    # thumbnail — set together at the serializer boundary. Empty string means "no
+    # photo" (keeps the ``exclude(photo_url="")`` feed filter simple and avoids
+    # nullable-URL ambiguity). No ImageField/FileField: the bytes live in Blob,
+    # not a Django storage round-trip; the delete API takes the URL directly, so
+    # the two URLs are sufficient for both serving and cleanup (§5.1).
+    photo_url = models.URLField(max_length=500, blank=True, default="")
+    thumbnail_url = models.URLField(max_length=500, blank=True, default="")
 
     class Meta:
         ordering = ["-created_at"]
