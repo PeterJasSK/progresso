@@ -20,6 +20,7 @@ from rest_framework.views import APIView
 
 from core.models import CustomUser, Measurement, Role
 from core.api.permissions import MeasurementAccessPermission
+from core.services import chart_data
 from core.api.serializers import (
     MeasurementSerializer,
     RegisterSerializer,
@@ -156,3 +157,20 @@ class MeasurementViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+    def series(self, request: Request) -> Response:
+        """GET /measurements/series?user=:id — server-computed chart series (P4).
+
+        Same ``can_access`` gate as ``list``/``photos`` (``get_target_user`` +
+        :class:`MeasurementAccessPermission`). Thin: resolve the target, pull the
+        history **ascending** for the chart axis, hand it to the chart-data
+        service, return its dict. Not paginated — the whole history feeds one
+        chart (§5.5). All BMI/delta/trend math lives in the services layer.
+        """
+        target = self.get_target_user(request)
+        measurements = (
+            Measurement.objects.filter(user=target)
+            .select_related("user")
+            .order_by("measured_at", "created_at")
+        )
+        return Response(chart_data.build_series(measurements))

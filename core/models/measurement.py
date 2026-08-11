@@ -12,17 +12,23 @@ Shared model across the measurements epic:
   thumbnail happen at the serializer boundary; blob delete-on-delete is a
   ``post_delete`` signal (``core/services/blob_cleanup.py``), not a ``save()``
   override, so cascade deletes clean up too.
-* P4 — the ``bmi`` property and the derived/chart surface.
+* P4 (this) — the computed ``bmi`` property (no DB column — BMI derives from
+  ``weight`` + ``height``) and the derived/chart surface. The formula lives in
+  ``core/services/metrics.py``; the property is a thin adaptor so the math is not
+  duplicated on the model.
 
-Each plan must leave the model open for the next without a rewrite: no ``bmi``
-property here yet.
+Each plan must leave the model open for the next without a rewrite.
 """
 from __future__ import annotations
+
+from decimal import Decimal
 
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
+
+from core.services import metrics
 
 
 class UnitSystem(models.TextChoices):
@@ -132,6 +138,14 @@ class Measurement(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+    @property
+    def bmi(self) -> Decimal | None:
+        """Computed BMI for this row (P4) — ``None`` if weight or height is
+        missing. Delegates to :func:`core.services.metrics.bmi` (metric-only, 1
+        dp); no DB column, computed on read (plan §5.1).
+        """
+        return metrics.bmi(self.weight, self.height)
 
     def __str__(self) -> str:
         return f"{self.user} @ {self.created_at:%Y-%m-%d}"

@@ -126,6 +126,13 @@ class MeasurementSerializer(serializers.ModelSerializer):
         error_messages={"invalid_image": "invalid_image"},
     )
 
+    # Computed BMI (P4) riding in every single-measurement payload (list/detail)
+    # for the P6/P7 stat tiles. Read-only; ``None`` when weight or height is
+    # absent. A method field so it maps straight to the model property and
+    # serializes as a JSON number, not the string DRF coerces DecimalFields into
+    # (plan §5.7, §11 Q6). The ``series`` endpoint does not use this serializer.
+    bmi = serializers.SerializerMethodField()
+
     class Meta:
         model = Measurement
         fields = (
@@ -143,11 +150,18 @@ class MeasurementSerializer(serializers.ModelSerializer):
             "body_fat_pct",
             "measured_at",
             "created_at",
+            "bmi",
             "photo",
             "photo_url",
             "thumbnail_url",
         )
-        read_only_fields = ("user", "created_at", "photo_url", "thumbnail_url")
+        read_only_fields = (
+            "user",
+            "created_at",
+            "bmi",
+            "photo_url",
+            "thumbnail_url",
+        )
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -190,6 +204,11 @@ class MeasurementSerializer(serializers.ModelSerializer):
         "calf": (10, 250, 4, 100),
         "body_fat_pct": (0, 75, 0, 75),
     }
+
+    def get_bmi(self, obj: Measurement) -> float | None:
+        """Serialize the model's computed BMI as a JSON number (§5.7)."""
+        value = obj.bmi
+        return None if value is None else float(value)
 
     def validate(self, attrs: dict) -> dict:
         creating = self.instance is None

@@ -22,6 +22,7 @@ _measurement_detail = MeasurementViewSet.as_view(
     {"get": "retrieve", "patch": "partial_update", "delete": "destroy"}
 )
 _measurement_photos = MeasurementViewSet.as_view({"get": "photos"})
+_measurement_series = MeasurementViewSet.as_view({"get": "series"})
 
 urlpatterns = [
     path("auth/register", RegisterView.as_view(), name="auth-register"),
@@ -34,6 +35,7 @@ urlpatterns = [
     # but ordering it first keeps intent obvious and pre-empts a future non-int
     # pk change (§5.7).
     path("measurements/photos", _measurement_photos, name="measurement-photos"),
+    path("measurements/series", _measurement_series, name="measurement-series"),
     path(
         "measurements/<int:pk>",
         _measurement_detail,
