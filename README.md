@@ -44,4 +44,36 @@ All under `/api/v1/`. Session-based; register/login/trainers are public.
 Access control is a single predicate: `CustomUser.can_access(target)`. Every
 DRF permission class consumes it — there are no inline role checks.
 
-Admin lives at `/admin/`, outside the (future) SPA.
+Admin lives at `/admin/`, outside the SPA.
+
+## Frontend SPA (P5)
+
+React + TypeScript + Tailwind PWA in `frontend/` (Vite). Design tokens, theme,
+i18n (EN/SK), the app shell, and the auth screens live here. Same-origin with the
+API — the dev server proxies `/api` to Django, so session cookies + CSRF work
+without CORS.
+
+Two-process dev flow (run both):
+
+```bash
+# terminal 1 — backend
+python manage.py runserver            # http://localhost:8000
+
+# terminal 2 — frontend
+cd frontend
+npm install                           # first time only
+cp .env.example .env                  # optional; VITE_API_BASE defaults to /api/v1
+npm run dev                           # http://localhost:5173, proxies /api -> :8000
+```
+
+Build / preview the production bundle (installable PWA + offline shell):
+
+```bash
+cd frontend
+npm run build                         # tsc + vite build -> frontend/dist
+npm run preview                       # serve the built shell locally
+```
+
+When `frontend/dist` exists, Django also serves the SPA same-origin via a catch-all
+(`progresso/spa.py`); production static-asset serving (WhiteNoise/host wiring) lands
+in P8.

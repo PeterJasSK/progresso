@@ -1,0 +1,59 @@
+/*
+ * Single token source of truth. Values copied exactly from tasks/design/design-preview.html
+ * (the rendered reference is authoritative per plan §2 fidelity note).
+ * Two theme blocks only — light + dark. `deep`/OLED intentionally not built (epic Q4).
+ * No component may hardcode a hex; everything resolves through these vars via Tailwind.
+ */
+:root,
+:root[data-theme='light'] {
+  /* type families */
+  --font-display: 'Orbitron', system-ui, sans-serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --bg-deep: #f8fafc;
+  --bg: #ffffff;
+  --surface: #eaf6ff;
+  --text: #0a2540;
+  --heading: #052e44;
+  --muted: #5b7590;
+  --accent: #00aaff;
+  --primary: #084666;
+  --primary-hover: #052e44;
+  --border: rgba(0, 170, 255, 0.16);
+  --success: #0d9f6e;
+  --danger: #dc2626;
+  --warn: #d97706;
+  --glow: none;
+  --shadow-card: 0 8px 32px rgba(8, 70, 102, 0.12);
+  --r-sm: 12px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-pill: 30px;
+
+  /* chart palette — consumed by P4/P6 charts; no chart rendered in P5 */
+  --c-weight: #00aaff;
+  --c-chest: #4dcfff;
+  --c-waist: #0d9f6e;
+  --c-biceps: #7ad9ff;
+  --c-thigh: #0077cc;
+  --c-calf: #34d399;
+}
+
+:root[data-theme='dark'] {
+  --bg-deep: #052e44;
+  --bg: #0a2540;
+  --surface: #0c3350;
+  --text: #e2e8f0;
+  --heading: #f8fafc;
+  --muted: #94b4cf;
+  --accent: #00aaff;
+  --primary: #00aaff;
+  --primary-hover: #0077cc;
+  --border: rgba(0, 170, 255, 0.24);
+  --success: #34d399;
+  --danger: #f87171;
+  --warn: #fbbf24;
+  --glow: 0 0 12px rgba(0, 170, 255, 0.55);
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.45);
+}

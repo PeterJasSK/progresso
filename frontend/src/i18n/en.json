@@ -1,0 +1,82 @@
+{
+  "app": {
+    "name": "Progresso",
+    "tagline": "Track every rep of the journey."
+  },
+  "common": {
+    "loading": "Loading…",
+    "optional": "optional",
+    "submitting": "Please wait…"
+  },
+  "theme": {
+    "label": "Theme",
+    "toLight": "Switch to light theme",
+    "toDark": "Switch to dark theme",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "lang": {
+    "label": "Language",
+    "en": "EN",
+    "sk": "SK"
+  },
+  "nav": {
+    "logout": "Log out"
+  },
+  "roles": {
+    "trainee": "Trainee",
+    "trainer": "Trainer"
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "username": "Username",
+      "password": "Password",
+      "submit": "Sign in",
+      "noAccount": "No account yet?",
+      "registerLink": "Create one"
+    },
+    "register": {
+      "title": "Create account",
+      "username": "Username",
+      "password": "Password",
+      "role": "I am a",
+      "roleTrainee": "Trainee",
+      "roleTrainer": "Trainer",
+      "trainer": "Your trainer",
+      "trainerNone": "— none —",
+      "submit": "Create account",
+      "haveAccount": "Already have an account?",
+      "loginLink": "Sign in"
+    }
+  },
+  "home": {
+    "trainee": {
+      "title": "Your progress",
+      "placeholder": "This is a placeholder home. Your progress journey lands here soon.",
+      "weight": "Weight",
+      "sessions": "Sessions this week",
+      "delta": "vs last week"
+    },
+    "trainer": {
+      "title": "Trainer cockpit",
+      "placeholder": "This is a placeholder home. Your roster and cockpit land here soon.",
+      "clients": "Active clients",
+      "checkins": "Check-ins today",
+      "delta": "vs yesterday"
+    }
+  },
+  "errors": {
+    "invalid_credentials": "Incorrect username or password.",
+    "username_taken": "That username is already taken.",
+    "password_too_weak": "That password is too weak. Try a longer one.",
+    "invalid_trainer": "That trainer could not be found.",
+    "invalid_role": "That role is not allowed.",
+    "unknown": "Something went wrong. Please try again."
+  },
+  "notfound": {
+    "title": "Page not found",
+    "message": "The page you were looking for does not exist.",
+    "home": "Go home"
+  }
+}

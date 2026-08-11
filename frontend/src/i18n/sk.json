@@ -1,0 +1,82 @@
+{
+  "app": {
+    "name": "Progresso",
+    "tagline": "Sleduj každé opakovanie svojej cesty."
+  },
+  "common": {
+    "loading": "Načítava sa…",
+    "optional": "nepovinné",
+    "submitting": "Čakajte prosím…"
+  },
+  "theme": {
+    "label": "Motív",
+    "toLight": "Prepnúť na svetlý motív",
+    "toDark": "Prepnúť na tmavý motív",
+    "light": "Svetlý",
+    "dark": "Tmavý"
+  },
+  "lang": {
+    "label": "Jazyk",
+    "en": "EN",
+    "sk": "SK"
+  },
+  "nav": {
+    "logout": "Odhlásiť sa"
+  },
+  "roles": {
+    "trainee": "Cvičenec",
+    "trainer": "Tréner"
+  },
+  "auth": {
+    "login": {
+      "title": "Prihlásenie",
+      "username": "Používateľské meno",
+      "password": "Heslo",
+      "submit": "Prihlásiť sa",
+      "noAccount": "Ešte nemáte účet?",
+      "registerLink": "Vytvorte si ho"
+    },
+    "register": {
+      "title": "Vytvoriť účet",
+      "username": "Používateľské meno",
+      "password": "Heslo",
+      "role": "Som",
+      "roleTrainee": "Cvičenec",
+      "roleTrainer": "Tréner",
+      "trainer": "Váš tréner",
+      "trainerNone": "— žiadny —",
+      "submit": "Vytvoriť účet",
+      "haveAccount": "Už máte účet?",
+      "loginLink": "Prihláste sa"
+    }
+  },
+  "home": {
+    "trainee": {
+      "title": "Váš pokrok",
+      "placeholder": "Toto je dočasná domovská stránka. Vaša cesta pokroku pribudne čoskoro.",
+      "weight": "Hmotnosť",
+      "sessions": "Tréningy tento týždeň",
+      "delta": "oproti minulému týždňu"
+    },
+    "trainer": {
+      "title": "Kokpit trénera",
+      "placeholder": "Toto je dočasná domovská stránka. Váš zoznam klientov a kokpit pribudnú čoskoro.",
+      "clients": "Aktívni klienti",
+      "checkins": "Dnešné prihlásenia",
+      "delta": "oproti včerajšku"
+    }
+  },
+  "errors": {
+    "invalid_credentials": "Nesprávne používateľské meno alebo heslo.",
+    "username_taken": "Toto používateľské meno je už obsadené.",
+    "password_too_weak": "Toto heslo je príliš slabé. Skúste dlhšie.",
+    "invalid_trainer": "Takého trénera sa nepodarilo nájsť.",
+    "invalid_role": "Táto rola nie je povolená.",
+    "unknown": "Niečo sa pokazilo. Skúste to znova."
+  },
+  "notfound": {
+    "title": "Stránka sa nenašla",
+    "message": "Hľadaná stránka neexistuje.",
+    "home": "Domov"
+  }
+}
