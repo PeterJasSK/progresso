@@ -4,6 +4,7 @@ from __future__ import annotations
 from django.urls import path
 
 from core.api.views import (
+    GoalViewSet,
     LoginView,
     LogoutView,
     MeasurementViewSet,
@@ -23,6 +24,10 @@ _measurement_detail = MeasurementViewSet.as_view(
 )
 _measurement_photos = MeasurementViewSet.as_view({"get": "photos"})
 _measurement_series = MeasurementViewSet.as_view({"get": "series"})
+# P6: goals list/create. The ``goals/<int:pk>`` PATCH toggle-complete route is
+# P7 — ``GoalViewSet.as_view({"patch": "partial_update"})`` — the viewset +
+# permission already admit it.
+_goal_list = GoalViewSet.as_view({"get": "list", "post": "create"})
 
 urlpatterns = [
     path("auth/register", RegisterView.as_view(), name="auth-register"),
@@ -41,4 +46,5 @@ urlpatterns = [
         _measurement_detail,
         name="measurement-detail",
     ),
+    path("goals", _goal_list, name="goal-list"),
 ]

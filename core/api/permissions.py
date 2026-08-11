@@ -99,3 +99,46 @@ class MeasurementAccessPermission(BasePermission):
             return user.can_access(obj.user)
         # PATCH/DELETE: owner-trainee only.
         return obj.user_id == user.pk and user.role == Role.TRAINEE
+
+
+class GoalAccessPermission(BasePermission):
+    """Access gate for goals — all reads delegate to ``can_access`` (P6).
+
+    Shaped like :class:`MeasurementAccessPermission`, with the endpoint concerns
+    the goal routes require (mvp-routes.md §C):
+
+    * **create** is trainee-only and always for ``self`` (owner forced in the
+      view); role gating reuses :class:`IsTrainee`.
+    * **toggle-complete** (``PATCH``, wired in P7) is allowed for the owner
+      trainee *or* the trainer who owns the trainee — so P7 adds only the route,
+      not new permission logic. Read stays gated by ``can_access``.
+    """
+
+    def has_permission(self, request: Request, view: APIView) -> bool:
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+
+        if request.method == "POST":
+            if not IsTrainee().has_permission(request, view):
+                return False
+            target = view.get_target_user(request)
+            return target.pk == user.pk and user.can_access(target)
+
+        resolver = getattr(view, "get_target_user", None)
+        if resolver is None:
+            return False
+        target = resolver(request)
+        return user.can_access(target)
+
+    def has_object_permission(
+        self, request: Request, view: APIView, obj: object
+    ) -> bool:
+        user = request.user
+        if request.method in SAFE_METHODS:
+            return user.can_access(obj.user)
+        # PATCH (toggle-complete, P7): owner trainee, or trainer who owns them.
+        # ``can_access`` already encodes trainer->trainee ownership.
+        return obj.user_id == user.pk or (
+            user.role == Role.TRAINER and user.can_access(obj.user)
+        )

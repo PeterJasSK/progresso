@@ -10,7 +10,15 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from rest_framework import serializers
 
-from core.models import CustomUser, Measurement, Role, UnitSystem
+from core.models import (
+    CustomUser,
+    Goal,
+    GoalDirection,
+    GoalMetric,
+    Measurement,
+    Role,
+    UnitSystem,
+)
 from core.services import blob_cleanup, photos
 
 
@@ -293,3 +301,69 @@ class MeasurementSerializer(serializers.ModelSerializer):
         # upload never orphans the record without an image (§5.4).
         blob_cleanup.delete_blob_urls(old_urls)
         return instance
+
+
+class GoalSerializer(serializers.ModelSerializer):
+    """Goal list/create shape (P6, AC-4).
+
+    Declarative goal: metric + target + direction + optional deadline + note.
+    ``user`` is read-only — the viewset forces it to ``request.user`` on create
+    (mvp-routes.md §C). ``is_completed`` is read-only here; the toggle is P7's
+    ``PATCH`` route. All error ``detail`` values are translation *keys* (epic Q6):
+    ``invalid_metric``, ``invalid_direction``, ``missing_target``,
+    ``target_out_of_range``.
+    """
+
+    # Plain CharFields (not ChoiceField) so a bad choice routes through our own
+    # translatable key instead of DRF's English "not a valid choice".
+    metric = serializers.CharField()
+    direction = serializers.CharField()
+    # required=False so a missing target returns our ``missing_target`` key from
+    # validate() rather than DRF's English "required".
+    target_value = serializers.DecimalField(
+        max_digits=6, decimal_places=2, required=False, allow_null=True
+    )
+
+    class Meta:
+        model = Goal
+        fields = (
+            "id",
+            "user",
+            "metric",
+            "target_value",
+            "direction",
+            "target_date",
+            "is_completed",
+            "description",
+            "created_at",
+        )
+        read_only_fields = ("user", "is_completed", "created_at")
+
+    # Tight target band (metric-unaware; the app is metric-only, §3). Wide enough
+    # for weight (kg) and circumferences (cm); body-fat percent is small but the
+    # ceiling harmlessly admits it.
+    _TARGET_LO = 0
+    _TARGET_HI = 1000
+
+    def validate_metric(self, value: str) -> str:
+        if value not in GoalMetric.values:
+            raise serializers.ValidationError("invalid_metric")
+        return value
+
+    def validate_direction(self, value: str) -> str:
+        if value not in GoalDirection.values:
+            raise serializers.ValidationError("invalid_direction")
+        return value
+
+    def validate(self, attrs: dict) -> dict:
+        creating = self.instance is None
+        target = attrs.get("target_value")
+        if target is None and creating:
+            raise serializers.ValidationError({"target_value": "missing_target"})
+        if target is not None and (
+            target < self._TARGET_LO or target > self._TARGET_HI
+        ):
+            raise serializers.ValidationError(
+                {"target_value": "target_out_of_range"}
+            )
+        return attrs

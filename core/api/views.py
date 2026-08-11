@@ -18,15 +18,34 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.models import CustomUser, Measurement, Role
-from core.api.permissions import MeasurementAccessPermission
+from core.models import CustomUser, Goal, Measurement, Role
+from core.api.permissions import (
+    GoalAccessPermission,
+    MeasurementAccessPermission,
+)
 from core.services import chart_data
 from core.api.serializers import (
+    GoalSerializer,
     MeasurementSerializer,
     RegisterSerializer,
     TrainerOptionSerializer,
     UserSerializer,
 )
+
+
+class TargetUserMixin:
+    """Resolve the user whose data a request targets — the ``CanAccessTarget``
+    contract (permissions.py). ``?user=`` names a trainee; absent -> self.
+
+    Shared by every domain viewset so the resolution rule is not copy-pasted
+    (epic §3, §10).
+    """
+
+    def get_target_user(self, request: Request) -> CustomUser:
+        user_id = request.query_params.get("user")
+        if user_id is None:
+            return request.user
+        return get_object_or_404(CustomUser, pk=user_id)
 
 
 class RegisterView(APIView):
@@ -93,12 +112,12 @@ class MeView(APIView):
         return Response(UserSerializer(request.user).data)
 
 
-class MeasurementViewSet(viewsets.ModelViewSet):
+class MeasurementViewSet(TargetUserMixin, viewsets.ModelViewSet):
     """Measurements CRUD (P2). Thin: querysets, permissions, forced owner only.
 
     Access is resolved entirely through ``request.user.can_access`` via
     :class:`MeasurementAccessPermission` — no inline role/data-access branch
-    here (epic §3, §10).
+    here (epic §3, §10). ``get_target_user`` comes from :class:`TargetUserMixin`.
     """
 
     serializer_class = MeasurementSerializer
@@ -107,15 +126,6 @@ class MeasurementViewSet(viewsets.ModelViewSet):
     # already includes these; set them explicitly so the contract is legible and
     # independent of settings (§5.6).
     parser_classes = [MultiPartParser, FormParser, JSONParser]
-
-    def get_target_user(self, request: Request) -> CustomUser:
-        """Resolve the user whose data is targeted — the ``CanAccessTarget``
-        contract (permissions.py). ``?user=`` names a trainee; absent -> self.
-        """
-        user_id = request.query_params.get("user")
-        if user_id is None:
-            return request.user
-        return get_object_or_404(CustomUser, pk=user_id)
 
     def get_queryset(self) -> QuerySet[Measurement]:
         user = self.request.user
@@ -174,3 +184,26 @@ class MeasurementViewSet(viewsets.ModelViewSet):
             .order_by("measured_at", "created_at")
         )
         return Response(chart_data.build_series(measurements))
+
+
+class GoalViewSet(TargetUserMixin, viewsets.ModelViewSet):
+    """Goals list/create (P6). Thin: querysets, permissions, forced owner only.
+
+    Access is resolved entirely through ``request.user.can_access`` via
+    :class:`GoalAccessPermission` (epic §3). P6 wires only ``list`` + ``create``;
+    the ``partial_update`` toggle-complete route is P7 (the permission already
+    admits it).
+    """
+
+    serializer_class = GoalSerializer
+    permission_classes = [IsAuthenticated, GoalAccessPermission]
+    parser_classes = [JSONParser]
+
+    def get_queryset(self) -> QuerySet[Goal]:
+        # Permission already asserted can_access(target); filter to it.
+        target = self.get_target_user(self.request)
+        return Goal.objects.filter(user=target).select_related("user")
+
+    def perform_create(self, serializer: GoalSerializer) -> None:
+        # Owner is forced to the caller — any ``user`` in the body is ignored.
+        serializer.save(user=self.request.user)
