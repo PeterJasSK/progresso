@@ -89,6 +89,11 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
+    # Bounded list responses (epic NFR §7); lists return the standard
+    # {count, next, previous, results} envelope. Only affects generic
+    # views/viewsets — hand-rolled APIView.get responses are unaffected.
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 50,
 }
 
 # i18n (epic Q6): EN base, SK complete; backend messages translatable.

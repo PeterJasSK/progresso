@@ -7,9 +7,10 @@ from __future__ import annotations
 
 from django.contrib.auth import password_validation
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from rest_framework import serializers
 
-from core.models import CustomUser, Role
+from core.models import CustomUser, Measurement, Role, UnitSystem
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -93,3 +94,128 @@ class RegisterSerializer(serializers.Serializer):
             user.head_trainer = trainer
             user.save(update_fields=["head_trainer"])
         return user
+
+
+class MeasurementSerializer(serializers.ModelSerializer):
+    """Measurement CRUD shape with unit-aware range validation (P2, AC-1..AC-3).
+
+    ``user`` is read-only — ownership is never client-set; the viewset forces it
+    to ``request.user`` on create (mvp-routes.md §C). All error ``detail`` values
+    are translation *keys* (epic Q6): ``out_of_range``, ``no_values``,
+    ``invalid_unit_system``.
+    """
+
+    # Plain CharField (not ChoiceField) so a bad/blank choice routes through our
+    # own translatable key instead of DRF's default English "not a valid choice".
+    unit_system = serializers.CharField(required=False)
+
+    class Meta:
+        model = Measurement
+        fields = (
+            "id",
+            "user",
+            "unit_system",
+            "weight",
+            "height",
+            "chest",
+            "waist",
+            "hips",
+            "biceps",
+            "thigh",
+            "calf",
+            "body_fat_pct",
+            "measured_at",
+            "created_at",
+        )
+        read_only_fields = ("user", "created_at")
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        # Drop the model's absolute min/max validators from the API fields so the
+        # unit-aware band in validate() is the single range authority here and
+        # every out-of-range value returns the translatable ``out_of_range`` key
+        # (epic Q6) — not DRF's English "Ensure this value is..." prose. The
+        # model validators still guard the DB/admin floor (§5.2).
+        for name in self._VALUE_FIELDS:
+            field = self.fields[name]
+            field.validators = [
+                v
+                for v in field.validators
+                if not isinstance(v, (MinValueValidator, MaxValueValidator))
+            ]
+
+    # The body-metric value fields. "At least one present" is enforced so an
+    # all-null entry (meaningless) is rejected on create.
+    _VALUE_FIELDS = (
+        "weight",
+        "height",
+        "chest",
+        "waist",
+        "hips",
+        "biceps",
+        "thigh",
+        "calf",
+        "body_fat_pct",
+    )
+
+    # Tight, unit-aware bands (§5.2). (metric_lo, metric_hi, imperial_lo, imperial_hi).
+    _BANDS = {
+        "weight": (20, 400, 44, 880),
+        "height": (50, 250, 20, 98),
+        "chest": (10, 250, 4, 100),
+        "waist": (10, 250, 4, 100),
+        "hips": (10, 250, 4, 100),
+        "biceps": (10, 250, 4, 100),
+        "thigh": (10, 250, 4, 100),
+        "calf": (10, 250, 4, 100),
+        "body_fat_pct": (0, 75, 0, 75),
+    }
+
+    def validate(self, attrs: dict) -> dict:
+        creating = self.instance is None
+
+        # Resolve the effective unit system: required explicitly on create
+        # (epic Q2), may be omitted on PATCH (falls back to the stored value).
+        unit = attrs.get("unit_system")
+        if unit is None and not creating:
+            unit = self.instance.unit_system
+        if creating and not unit:
+            raise serializers.ValidationError(
+                {"unit_system": "invalid_unit_system"}
+            )
+        if unit is not None and unit not in UnitSystem.values:
+            raise serializers.ValidationError(
+                {"unit_system": "invalid_unit_system"}
+            )
+
+        # Unit-aware range check on every supplied value field.
+        errors: dict[str, str] = {}
+        for field in self._VALUE_FIELDS:
+            value = attrs.get(field)
+            if value is None:
+                continue
+            metric_lo, metric_hi, imperial_lo, imperial_hi = self._BANDS[field]
+            if unit == UnitSystem.IMPERIAL:
+                low, high = imperial_lo, imperial_hi
+            else:
+                low, high = metric_lo, metric_hi
+            if value < low or value > high:
+                errors[field] = "out_of_range"
+        if errors:
+            raise serializers.ValidationError(errors)
+
+        # At least one value must be present. On create: look at attrs only.
+        # On PATCH: merge over the stored instance so clearing everything fails.
+        if any(
+            self._resolved_value(attrs, field, creating) is not None
+            for field in self._VALUE_FIELDS
+        ):
+            return attrs
+        raise serializers.ValidationError("no_values")
+
+    def _resolved_value(self, attrs: dict, field: str, creating: bool):
+        if field in attrs:
+            return attrs[field]
+        if creating:
+            return None
+        return getattr(self.instance, field)

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models import Q
 
 
 class Role(models.TextChoices):
@@ -66,3 +67,18 @@ class CustomUser(AbstractUser):
             return target.head_trainer_id == self.pk
         # HELPER branch deferred (post-MVP); trainee and everything else: no access.
         return False
+
+    def accessible_data_filter(self, field: str = "user") -> Q:
+        """Return a ``Q`` selecting rows on ``field`` this user may read.
+
+        The queryset-scoping mirror of :meth:`can_access` — kept here beside the
+        single access predicate so the trainer->trainee relationship is never
+        re-encoded in a view (epic §3, §10). Consumers use it to scope detail
+        querysets so an inaccessible id 404s instead of leaking existence
+        (epic Q6). Same MVP rules as :meth:`can_access`.
+        """
+        if self.is_superuser or self.role == Role.ADMIN:
+            return Q()  # all rows
+        if self.role == Role.TRAINER:
+            return Q(**{field: self}) | Q(**{f"{field}__head_trainer": self})
+        return Q(**{field: self})
