@@ -1,6 +1,6 @@
 // Route table + guards (plan §5.9). /logout is an action route that clears the session
 // then returns to /login. Role homes are guarded by RequireAuth + RequireRole.
-import { useEffect } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { useAuth } from './auth/useAuth'
 import { RequireAuth } from './auth/RequireAuth'
@@ -10,7 +10,12 @@ import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { RootRedirect } from './pages/RootRedirect'
 import { NotFoundPage } from './pages/NotFoundPage'
-import { TraineeHomePlaceholder } from './pages/TraineeHomePlaceholder'
+import { TraineeHome } from './pages/TraineeHome'
+import { MeasurementsList } from './pages/MeasurementsList'
+import { MeasurementForm } from './pages/MeasurementForm'
+import { MeasurementDetail } from './pages/MeasurementDetail'
+import { Progress } from './pages/Progress'
+import { Goals } from './pages/Goals'
 import { TrainerHomePlaceholder } from './pages/TrainerHomePlaceholder'
 
 function LogoutRoute() {
@@ -22,6 +27,15 @@ function LogoutRoute() {
   return <Spinner />
 }
 
+// Wrap a trainee screen in the auth + role guards (trainee-only, §5.3).
+function trainee(el: ReactNode) {
+  return (
+    <RequireAuth>
+      <RequireRole role="trainee">{el}</RequireRole>
+    </RequireAuth>
+  )
+}
+
 export function App() {
   return (
     <Routes>
@@ -29,16 +43,13 @@ export function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/logout" element={<LogoutRoute />} />
       <Route path="/" element={<RootRedirect />} />
-      <Route
-        path="/me"
-        element={
-          <RequireAuth>
-            <RequireRole role="trainee">
-              <TraineeHomePlaceholder />
-            </RequireRole>
-          </RequireAuth>
-        }
-      />
+      <Route path="/me" element={trainee(<TraineeHome />)} />
+      <Route path="/me/measurements" element={trainee(<MeasurementsList />)} />
+      <Route path="/me/measurements/new" element={trainee(<MeasurementForm />)} />
+      <Route path="/me/measurements/:id" element={trainee(<MeasurementDetail />)} />
+      <Route path="/me/measurements/:id/edit" element={trainee(<MeasurementForm />)} />
+      <Route path="/me/progress" element={trainee(<Progress />)} />
+      <Route path="/me/goals" element={trainee(<Goals />)} />
       <Route
         path="/trainer"
         element={

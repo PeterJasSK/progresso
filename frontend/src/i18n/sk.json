@@ -21,11 +21,27 @@
     "sk": "SK"
   },
   "nav": {
-    "logout": "Odhlásiť sa"
+    "logout": "Odhlásiť sa",
+    "home": "Domov",
+    "measurements": "Merania",
+    "progress": "Pokrok",
+    "goals": "Ciele"
   },
   "roles": {
     "trainee": "Cvičenec",
     "trainer": "Tréner"
+  },
+  "metrics": {
+    "weight": "Hmotnosť",
+    "height": "Výška",
+    "chest": "Hrudník",
+    "waist": "Pás",
+    "hips": "Boky",
+    "biceps": "Biceps",
+    "thigh": "Stehno",
+    "calf": "Lýtko",
+    "body_fat_pct": "Telesný tuk",
+    "bmi": "BMI"
   },
   "auth": {
     "login": {
@@ -51,12 +67,13 @@
     }
   },
   "home": {
+    "logThisWeek": "Zaznamenať tento týždeň",
+    "overdue": "Po termíne",
+    "empty": "Zatiaľ žiadne merania. Zaznamenajte prvý záznam a uvidíte svoj pokrok.",
+    "lastLogged": "Naposledy zaznamenané",
     "trainee": {
       "title": "Váš pokrok",
-      "placeholder": "Toto je dočasná domovská stránka. Vaša cesta pokroku pribudne čoskoro.",
-      "weight": "Hmotnosť",
-      "sessions": "Tréningy tento týždeň",
-      "delta": "oproti minulému týždňu"
+      "delta": "oproti minulému záznamu"
     },
     "trainer": {
       "title": "Kokpit trénera",
@@ -66,12 +83,71 @@
       "delta": "oproti včerajšku"
     }
   },
+  "measurements": {
+    "title": "Moje merania",
+    "empty": "Zatiaľ žiadne záznamy. Klepnite na „Nový záznam“ a pridajte prvý.",
+    "logNew": "Nový záznam",
+    "photoAlt": "Fotka pokroku",
+    "noPhoto": "bez fotky"
+  },
+  "capture": {
+    "title": "Zaznamenať meranie",
+    "editTitle": "Upraviť meranie",
+    "measuredAt": "Dátum",
+    "photo": "Fotka pokroku",
+    "photoPreview": "Náhľad vybranej fotky",
+    "submit": "Uložiť záznam",
+    "save": "Uložiť zmeny"
+  },
+  "detail": {
+    "edit": "Upraviť",
+    "delete": "Vymazať",
+    "confirmDelete": "Vymazať toto meranie? Túto akciu nie je možné vrátiť.",
+    "notFound": "Toto meranie sa nepodarilo nájsť."
+  },
+  "progress": {
+    "title": "Môj pokrok",
+    "empty": "Zatiaľ žiadne údaje. Zaznamenajte niekoľko meraní a uvidíte trendy.",
+    "needMore": "Zaznamenajte aspoň dva záznamy na zobrazenie trendu."
+  },
+  "goals": {
+    "title": "Moje ciele",
+    "empty": "Zatiaľ žiadne ciele. Pridajte cieľ vyššie a stanovte si métu.",
+    "targetTo": "cieľ",
+    "by": "do",
+    "status": {
+      "active": "Aktívny",
+      "completed": "Splnený"
+    },
+    "direction": {
+      "increase": "Zvýšiť",
+      "decrease": "Znížiť"
+    },
+    "add": {
+      "title": "Pridať cieľ",
+      "metric": "Metrika",
+      "direction": "Smer",
+      "target": "Cieľová hodnota",
+      "date": "Cieľový dátum",
+      "note": "Poznámka",
+      "submit": "Pridať cieľ"
+    }
+  },
   "errors": {
     "invalid_credentials": "Nesprávne používateľské meno alebo heslo.",
     "username_taken": "Toto používateľské meno je už obsadené.",
     "password_too_weak": "Toto heslo je príliš slabé. Skúste dlhšie.",
     "invalid_trainer": "Takého trénera sa nepodarilo nájsť.",
     "invalid_role": "Táto rola nie je povolená.",
+    "no_values": "Zadajte aspoň jednu nameranú hodnotu.",
+    "out_of_range": "Jedna z hodnôt je mimo povoleného rozsahu.",
+    "invalid_unit_system": "Táto sústava jednotiek nie je platná.",
+    "invalid_image": "Tento obrázok sa nepodarilo načítať. Skúste inú fotku.",
+    "photo_too_large": "Táto fotka je príliš veľká. Skúste menšiu.",
+    "invalid_metric": "Táto metrika nie je platná.",
+    "invalid_direction": "Tento smer nie je platný.",
+    "missing_target": "Zadajte cieľovú hodnotu.",
+    "target_out_of_range": "Táto cieľová hodnota je mimo povoleného rozsahu.",
     "unknown": "Niečo sa pokazilo. Skúste to znova."
   },
   "notfound": {

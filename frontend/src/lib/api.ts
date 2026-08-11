@@ -18,13 +18,6 @@ export class ApiError extends Error {
   }
 }
 
-interface RequestOptions {
-  method?: string
-  body?: unknown
-  // Anonymous requests (login/register) skip the CSRF handshake.
-  anonymous?: boolean
-}
-
 // Extract a single error key from either envelope the backend uses:
 //   login: { "detail": "invalid_credentials" }
 //   register: { "username": ["username_taken"], "trainer_id": ["invalid_trainer"] }
@@ -40,10 +33,20 @@ function extractErrorKey(payload: unknown): string {
   return 'unknown'
 }
 
+interface RequestOptions {
+  method?: string
+  body?: unknown
+  // Multipart uploads: pass a FormData; we must NOT set Content-Type (the browser
+  // sets the multipart boundary). JSON body still serializes as before.
+  form?: FormData
+  anonymous?: boolean
+}
+
 async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   const method = opts.method ?? 'GET'
   const headers: Record<string, string> = {}
 
+  // JSON body sets Content-Type; FormData deliberately does not (§5.7).
   if (opts.body !== undefined) headers['Content-Type'] = 'application/json'
 
   if (UNSAFE.has(method) && !opts.anonymous) {
@@ -56,7 +59,12 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
     method,
     headers,
     credentials: 'include',
-    body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+    body:
+      opts.form !== undefined
+        ? opts.form
+        : opts.body !== undefined
+          ? JSON.stringify(opts.body)
+          : undefined,
   })
 
   if (res.status === 204) return undefined as T
@@ -79,4 +87,11 @@ export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body?: unknown, anonymous = false) =>
     request<T>(path, { method: 'POST', body, anonymous }),
+  patch: <T>(path: string, body?: unknown) =>
+    request<T>(path, { method: 'PATCH', body }),
+  del: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
+  // Multipart upload (measurement capture/edit with photo, §5.7). Defaults to
+  // POST (create); pass 'PATCH' for an edit that may replace the photo.
+  upload: <T>(path: string, form: FormData, method: 'POST' | 'PATCH' = 'POST') =>
+    request<T>(path, { method, form }),
 }

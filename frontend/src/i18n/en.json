@@ -21,11 +21,27 @@
     "sk": "SK"
   },
   "nav": {
-    "logout": "Log out"
+    "logout": "Log out",
+    "home": "Home",
+    "measurements": "Measurements",
+    "progress": "Progress",
+    "goals": "Goals"
   },
   "roles": {
     "trainee": "Trainee",
     "trainer": "Trainer"
+  },
+  "metrics": {
+    "weight": "Weight",
+    "height": "Height",
+    "chest": "Chest",
+    "waist": "Waist",
+    "hips": "Hips",
+    "biceps": "Biceps",
+    "thigh": "Thigh",
+    "calf": "Calf",
+    "body_fat_pct": "Body fat",
+    "bmi": "BMI"
   },
   "auth": {
     "login": {
@@ -51,12 +67,13 @@
     }
   },
   "home": {
+    "logThisWeek": "Log this week",
+    "overdue": "Overdue",
+    "empty": "No measurements yet. Log your first entry to see your progress here.",
+    "lastLogged": "Last logged",
     "trainee": {
       "title": "Your progress",
-      "placeholder": "This is a placeholder home. Your progress journey lands here soon.",
-      "weight": "Weight",
-      "sessions": "Sessions this week",
-      "delta": "vs last week"
+      "delta": "vs last entry"
     },
     "trainer": {
       "title": "Trainer cockpit",
@@ -66,12 +83,71 @@
       "delta": "vs yesterday"
     }
   },
+  "measurements": {
+    "title": "My measurements",
+    "empty": "No entries yet. Tap “Log new” to add your first.",
+    "logNew": "Log new",
+    "photoAlt": "Progress photo",
+    "noPhoto": "no photo"
+  },
+  "capture": {
+    "title": "Log measurement",
+    "editTitle": "Edit measurement",
+    "measuredAt": "Date",
+    "photo": "Progress photo",
+    "photoPreview": "Selected photo preview",
+    "submit": "Save entry",
+    "save": "Save changes"
+  },
+  "detail": {
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirmDelete": "Delete this measurement? This cannot be undone.",
+    "notFound": "That measurement could not be found."
+  },
+  "progress": {
+    "title": "My progress",
+    "empty": "No data yet. Log a few measurements to chart your trends.",
+    "needMore": "Log at least two entries to chart a trend."
+  },
+  "goals": {
+    "title": "My goals",
+    "empty": "No goals yet. Add one above to set a target.",
+    "targetTo": "target",
+    "by": "by",
+    "status": {
+      "active": "Active",
+      "completed": "Completed"
+    },
+    "direction": {
+      "increase": "Increase",
+      "decrease": "Decrease"
+    },
+    "add": {
+      "title": "Add a goal",
+      "metric": "Metric",
+      "direction": "Direction",
+      "target": "Target value",
+      "date": "Target date",
+      "note": "Note",
+      "submit": "Add goal"
+    }
+  },
   "errors": {
     "invalid_credentials": "Incorrect username or password.",
     "username_taken": "That username is already taken.",
     "password_too_weak": "That password is too weak. Try a longer one.",
     "invalid_trainer": "That trainer could not be found.",
     "invalid_role": "That role is not allowed.",
+    "no_values": "Enter at least one measurement value.",
+    "out_of_range": "One of the values is out of the allowed range.",
+    "invalid_unit_system": "That unit system is not valid.",
+    "invalid_image": "That image could not be read. Try another photo.",
+    "photo_too_large": "That photo is too large. Try a smaller one.",
+    "invalid_metric": "That metric is not valid.",
+    "invalid_direction": "That direction is not valid.",
+    "missing_target": "Enter a target value.",
+    "target_out_of_range": "That target value is out of the allowed range.",
     "unknown": "Something went wrong. Please try again."
   },
   "notfound": {
