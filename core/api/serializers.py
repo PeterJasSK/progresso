@@ -16,6 +16,7 @@ from core.models import (
     GoalDirection,
     GoalMetric,
     Measurement,
+    Message,
     Role,
     UnitSystem,
 )
@@ -483,3 +484,72 @@ class GoalToggleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Goal
         fields = ("id", "is_completed")
+
+
+class MessageSerializer(serializers.ModelSerializer):
+    """Read shape for a chat message (P8 §5.2).
+
+    ``mine`` (``sender == request.user``) lets the SPA align bubbles left/right
+    without leaking identity logic into the client. Read-only — sending goes
+    through :class:`MessageCreateSerializer`. Requires ``request`` in the
+    serializer context.
+    """
+
+    mine = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Message
+        fields = (
+            "id",
+            "sender",
+            "receiver",
+            "content",
+            "created_at",
+            "read_at",
+            "mine",
+        )
+
+    def get_mine(self, obj: Message) -> bool:
+        request = self.context.get("request")
+        return bool(request and obj.sender_id == request.user.pk)
+
+
+class MessageCreateSerializer(serializers.Serializer):
+    """Write path for sending a message (P8 §5.2, §5.4).
+
+    Input is ``{to, content}``. ``sender`` is always ``request.user`` (never
+    client-supplied); ``receiver`` is resolved from ``to``. The trainer<->trainee
+    relationship is gated by
+    :class:`~core.api.permissions.MessageAccessPermission` (403 for a stranger
+    recipient), so this serializer only validates existence + non-empty content.
+    Error ``detail`` values are translation *keys* (epic Q6): ``unknown_recipient``,
+    ``empty_message``.
+    """
+
+    to = serializers.IntegerField()
+    # allow_blank + no trim so a blank/whitespace body routes through our own
+    # translatable ``empty_message`` key in validate_content (epic Q6) instead of
+    # DRF's English "may not be blank".
+    content = serializers.CharField(
+        max_length=4000, allow_blank=True, trim_whitespace=False
+    )
+
+    def validate_to(self, value: int) -> int:
+        recipient = CustomUser.objects.filter(pk=value).first()
+        if recipient is None:
+            raise serializers.ValidationError("unknown_recipient")
+        self._recipient = recipient
+        return value
+
+    def validate_content(self, value: str) -> str:
+        if not value.strip():
+            raise serializers.ValidationError("empty_message")
+        return value
+
+    def save(self) -> Message:
+        request = self.context["request"]
+        return Message.objects.create(
+            sender=request.user,
+            receiver=self._recipient,
+            content=self.validated_data["content"],
+        )

@@ -68,6 +68,18 @@ class CustomUser(AbstractUser):
         # HELPER branch deferred (post-MVP); trainee and everything else: no access.
         return False
 
+    def can_communicate_with(self, other: "CustomUser") -> bool:
+        """Return whether this user and ``other`` may chat (P8 §5.3).
+
+        Chat requires *both parties in an allowed trainer<->trainee relationship*
+        (mvp-routes.md §C). ``can_access`` is directional — a trainer can access
+        their trainee but ``trainee.can_access(trainer)`` is ``False`` — so the
+        chat gate is the **symmetric OR** of the single predicate. This keeps the
+        relationship rule expressed once (built on ``can_access``); admins and
+        self-pairs fall out naturally. No new relationship logic (epic §3).
+        """
+        return self.can_access(other) or other.can_access(self)
+
     def accessible_data_filter(self, field: str = "user") -> Q:
         """Return a ``Q`` selecting rows on ``field`` this user may read.
 

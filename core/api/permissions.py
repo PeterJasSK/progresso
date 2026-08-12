@@ -164,3 +164,30 @@ class GoalAccessPermission(BasePermission):
         return obj.user_id == user.pk or (
             user.role == Role.TRAINER and user.can_access(obj.user)
         )
+
+
+class MessageAccessPermission(BasePermission):
+    """Chat gate — both parties in an allowed relationship (P8 §5.3, mvp-routes §C).
+
+    Uses the **symmetric** ``can_communicate_with`` (built on the single
+    ``can_access`` predicate): a trainee may chat their own trainer even though
+    ``can_access`` is directional. The relationship rule is never re-encoded here.
+
+    Endpoint concerns:
+
+    * **POST** (send / mark-read): resolve the counterpart via the view's
+      ``get_other_user`` and require the relationship — a stranger recipient is
+      **403**.
+    * **GET** (thread): authentication only here; the view resolves the
+      counterpart and **404s** a non-reachable thread (no existence leak, epic Q6),
+      matching the measurement/goal detail pattern (§11 Q1).
+    """
+
+    def has_permission(self, request: Request, view: APIView) -> bool:
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        if request.method == "POST":
+            other = view.get_other_user(request)
+            return bool(other and user.can_communicate_with(other))
+        return True

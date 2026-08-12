@@ -1,7 +1,7 @@
 // Trainer sub-nav (P7 §5.4). At the roster level it shows a single "Roster" link;
 // inside a trainee it becomes a breadcrumb-style row: back to the roster plus the
 // links between that trainee's screens. Labels via i18n; active link uses accent.
-// (Mirrors TraineeNav — chat is P8, absent.)
+// (Mirrors TraineeNav; the per-trainee row includes the P8 chat link.)
 import { NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
@@ -35,6 +35,7 @@ export function TrainerNav({ traineeId, traineeName }: TrainerNavProps) {
     { to: `${base}/progress`, key: 'nav.trainer.progress', end: false },
     { to: `${base}/photos`, key: 'nav.trainer.photos', end: false },
     { to: `${base}/goals`, key: 'nav.trainer.goals', end: false },
+    { to: `${base}/chat`, key: 'nav.trainer.chat', end: false },
   ]
 
   return (

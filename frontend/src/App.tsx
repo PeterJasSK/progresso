@@ -16,6 +16,8 @@ import { MeasurementForm } from './pages/MeasurementForm'
 import { MeasurementDetail } from './pages/MeasurementDetail'
 import { Progress } from './pages/Progress'
 import { Goals } from './pages/Goals'
+import { Chat } from './pages/Chat'
+import { TraineeChat } from './pages/TraineeChat'
 import { TrainerHome } from './pages/TrainerHome'
 import { AddTrainee } from './pages/AddTrainee'
 import { TraineeOverview } from './pages/TraineeOverview'
@@ -66,6 +68,7 @@ export function App() {
       <Route path="/me/measurements/:id/edit" element={trainee(<MeasurementForm />)} />
       <Route path="/me/progress" element={trainee(<Progress />)} />
       <Route path="/me/goals" element={trainee(<Goals />)} />
+      <Route path="/me/chat" element={trainee(<Chat />)} />
       <Route path="/trainer" element={trainer(<TrainerHome />)} />
       <Route path="/trainer/trainees/new" element={trainer(<AddTrainee />)} />
       <Route path="/trainer/trainees/:id" element={trainer(<TraineeOverview />)} />
@@ -88,6 +91,10 @@ export function App() {
       <Route
         path="/trainer/trainees/:id/goals"
         element={trainer(<TraineeGoals />)}
+      />
+      <Route
+        path="/trainer/trainees/:id/chat"
+        element={trainer(<TraineeChat />)}
       />
       <Route path="*" element={<NotFoundPage />} />
       <Route path="/index.html" element={<Navigate to="/" replace />} />

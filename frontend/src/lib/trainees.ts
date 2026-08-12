@@ -1,8 +1,8 @@
 // Typed wrappers over the trainer roster API (P7 §5.5). Screens never inline fetch
-// logic. The list endpoint returns DRF's paginated envelope (PAGE_SIZE=50); MVP
-// reads the first page only — following `next` is a P8 concern.
+// logic. The list endpoint returns DRF's paginated envelope (PAGE_SIZE=50); P8
+// follows `next` so a trainer with >50 trainees sees the whole roster (AC-7).
 import { api } from './api'
-import type { Paginated } from './measurements'
+import { fetchAllPages } from './measurements'
 
 export interface RosterEntry {
   id: number
@@ -19,9 +19,8 @@ export interface RosterEntry {
   trend: 'up' | 'down' | 'flat' | null
 }
 
-export async function listTrainees(): Promise<RosterEntry[]> {
-  const page = await api.get<Paginated<RosterEntry>>('/trainees')
-  return page.results
+export function listTrainees(): Promise<RosterEntry[]> {
+  return fetchAllPages<RosterEntry>('/trainees')
 }
 
 export function getTrainee(id: number): Promise<RosterEntry> {

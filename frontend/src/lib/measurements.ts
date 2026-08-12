@@ -39,8 +39,7 @@ export interface Series {
 }
 
 // List endpoints return DRF's paginated envelope (settings PAGE_SIZE=50); the
-// series/detail/create responses do not. MVP reads the first page only —
-// following `next` is a P8 concern.
+// series/detail/create responses do not.
 export interface Paginated<T> {
   count: number
   next: string | null
@@ -48,15 +47,39 @@ export interface Paginated<T> {
   results: T[]
 }
 
+const API_BASE: string = import.meta.env.VITE_API_BASE ?? '/api/v1'
+
+// P8 (§5.5, AC-7): follow the `next` cursor to return every row, not just the
+// first 50 — a trainee can exceed a page of measurements/photos, a trainer a page
+// of trainees. `next` is an absolute URL; strip the API base so the api client
+// (which re-prepends it) can fetch each page. Silent truncation is the bug this
+// fixes, so nothing is dropped.
+export async function fetchAllPages<T>(firstPath: string): Promise<T[]> {
+  const out: T[] = []
+  let path: string | null = firstPath
+  while (path) {
+    const page: Paginated<T> = await api.get<Paginated<T>>(path)
+    out.push(...page.results)
+    path = page.next ? toRelativePath(page.next) : null
+  }
+  return out
+}
+
+function toRelativePath(next: string): string {
+  try {
+    const url = new URL(next)
+    return url.pathname.replace(API_BASE, '') + url.search
+  } catch {
+    return next.replace(API_BASE, '')
+  }
+}
+
 function userQuery(userId?: number): string {
   return userId === undefined ? '' : `?user=${userId}`
 }
 
-export async function listMeasurements(userId?: number): Promise<Measurement[]> {
-  const page = await api.get<Paginated<Measurement>>(
-    `/measurements${userQuery(userId)}`,
-  )
-  return page.results
+export function listMeasurements(userId?: number): Promise<Measurement[]> {
+  return fetchAllPages<Measurement>(`/measurements${userQuery(userId)}`)
 }
 
 export function getMeasurement(id: number): Promise<Measurement> {
@@ -80,10 +103,7 @@ export function getSeries(userId?: number): Promise<Series> {
 }
 
 // Measurements that have a photo, for the P7 compare picker (§5.5). Paginated
-// envelope; first page only (MVP).
-export async function listPhotos(userId?: number): Promise<Measurement[]> {
-  const page = await api.get<Paginated<Measurement>>(
-    `/measurements/photos${userQuery(userId)}`,
-  )
-  return page.results
+// envelope; P8 follows `next` so every dated photo is available (AC-7).
+export function listPhotos(userId?: number): Promise<Measurement[]> {
+  return fetchAllPages<Measurement>(`/measurements/photos${userQuery(userId)}`)
 }

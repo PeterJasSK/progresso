@@ -6,7 +6,8 @@
   "common": {
     "loading": "Loading…",
     "optional": "optional",
-    "submitting": "Please wait…"
+    "submitting": "Please wait…",
+    "cancel": "Cancel"
   },
   "theme": {
     "label": "Theme",
@@ -26,13 +27,15 @@
     "measurements": "Measurements",
     "progress": "Progress",
     "goals": "Goals",
+    "chat": "Chat",
     "trainer": {
       "roster": "Roster",
       "overview": "Overview",
       "measurements": "Measurements",
       "progress": "Progress",
       "photos": "Photos",
-      "goals": "Goals"
+      "goals": "Goals",
+      "chat": "Chat"
     }
   },
   "roles": {
@@ -182,6 +185,24 @@
       "reopen": "Reopen"
     }
   },
+  "chat": {
+    "title": "Chat",
+    "empty": "No messages yet. Say hello.",
+    "placeholder": "Write a message…",
+    "send": "Send",
+    "noTrainer": "Link a trainer to start chatting.",
+    "linkTrainer": "Link a trainer"
+  },
+  "data": {
+    "title": "Your data",
+    "description": "Download everything you've logged, or permanently delete your account.",
+    "export": "Export my data",
+    "delete": "Delete my account",
+    "deleteWarning": "This permanently deletes your account and all your data. It cannot be undone.",
+    "deletePrompt": "Type {{word}} to confirm.",
+    "deleteConfirmWord": "DELETE",
+    "deleteConfirm": "Delete forever"
+  },
   "errors": {
     "invalid_credentials": "Incorrect username or password.",
     "username_taken": "That username is already taken.",
@@ -198,6 +219,10 @@
     "invalid_direction": "That direction is not valid.",
     "missing_target": "Enter a target value.",
     "target_out_of_range": "That target value is out of the allowed range.",
+    "empty_message": "Write a message before sending.",
+    "unknown_recipient": "That person could not be found.",
+    "not_related": "You can only chat with your own trainer or trainee.",
+    "rate_limited": "Too many attempts. Please wait a minute and try again.",
     "unknown": "Something went wrong. Please try again."
   },
   "notfound": {

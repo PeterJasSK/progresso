@@ -46,4 +46,13 @@ export function formatDate(value: Date | string | number): string {
   return new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' }).format(date)
 }
 
+// Date + time for chat message timestamps (P8). Short both so bubbles stay compact.
+export function formatDateTime(value: Date | string | number): string {
+  const date = value instanceof Date ? value : new Date(value)
+  return new Intl.DateTimeFormat(i18n.language, {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(date)
+}
+
 export default i18n

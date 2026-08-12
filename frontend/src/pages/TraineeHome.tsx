@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { AppShell } from '../components/AppShell'
 import { TraineeNav } from '../components/TraineeNav'
 import { TrainerLink } from '../components/TrainerLink'
+import { DataSection } from '../components/DataSection'
 import { StatTile } from '../components/StatTile'
 import { Button } from '../components/Button'
 import { Pill } from '../components/Pill'
@@ -129,6 +130,8 @@ export function TraineeHome() {
           </div>
         </>
       )}
+
+      <DataSection />
     </AppShell>
   )
 }

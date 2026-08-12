@@ -33,6 +33,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Serve static + the built SPA from the one Django service (P8 §5.10, AC-13).
+    # Must sit right after SecurityMiddleware and before everything else.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -94,6 +97,16 @@ REST_FRAMEWORK = {
     # views/viewsets — hand-rolled APIView.get responses are unaffected.
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 50,
+    # Rate-limit auth (P8 §5.7, AC-6). ScopedRateThrottle only throttles views
+    # that declare ``throttle_scope`` (login + register set "auth"); every other
+    # view — including chat polling — has no scope, so the throttle is inert
+    # there. No global Anon/User throttle: that would throttle the chat poll.
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.ScopedRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "auth": "10/min",
+    },
 }
 
 # i18n (epic Q6): EN base, SK complete; backend messages translatable.
@@ -108,6 +121,14 @@ USE_TZ = True
 TIME_ZONE = "UTC"
 
 STATIC_URL = "static/"
+# collectstatic target for admin/DRF assets (served by WhiteNoise in prod).
+STATIC_ROOT = BASE_DIR / "staticfiles"
+# WhiteNoise also serves the built SPA — Vite-hashed ``dist/assets``, the PWA
+# manifest/service-worker, icons — straight from ``frontend/dist`` at the site
+# root, so one Django service serves both the API and the app (host-agnostic,
+# epic Q5). The SPA *index* is served by ``progresso.spa``; WhiteNoise fills the
+# ``/assets`` gap its comment named. Inert in dev (Vite serves the SPA).
+WHITENOISE_ROOT = BASE_DIR / "frontend" / "dist"
 
 # Media (P3): used only by the Blob client's local-dev filesystem fallback,
 # active when ``BLOB_READ_WRITE_TOKEN`` is unset (§5.2/§5.8). Prod sets the token

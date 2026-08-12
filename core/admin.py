@@ -7,7 +7,7 @@ from __future__ import annotations
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from core.models import CustomUser, Goal, Measurement
+from core.models import CustomUser, Goal, Measurement, Message
 
 # Expose the extra relationship/role fields on the stock UserAdmin form.
 _extra = ("role", "head_trainer", "helpers")
@@ -47,3 +47,12 @@ class GoalAdmin(admin.ModelAdmin):
         "created_at",
     )
     list_filter = ("metric", "direction", "is_completed")
+
+
+@admin.register(Message)
+class MessageAdmin(admin.ModelAdmin):
+    """Admin spot-check surface (outside the SPA, epic §3)."""
+
+    list_display = ("sender", "receiver", "created_at", "read_at")
+    list_filter = ("created_at",)
+    search_fields = ("sender__username", "receiver__username")

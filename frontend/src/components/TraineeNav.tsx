@@ -8,6 +8,7 @@ const links = [
   { to: '/me/measurements', key: 'nav.measurements', end: false },
   { to: '/me/progress', key: 'nav.progress', end: false },
   { to: '/me/goals', key: 'nav.goals', end: false },
+  { to: '/me/chat', key: 'nav.chat', end: false },
 ]
 
 export function TraineeNav() {

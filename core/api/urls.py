@@ -4,10 +4,14 @@ from __future__ import annotations
 from django.urls import path
 
 from core.api.views import (
+    AccountDeleteView,
     GoalViewSet,
     LoginView,
     LogoutView,
     MeasurementViewSet,
+    MeExportView,
+    MessageReadView,
+    MessagesView,
     MeView,
     RegisterView,
     TraineeViewSet,
@@ -54,4 +58,11 @@ urlpatterns = [
     path("goals/<int:pk>", _goal_detail, name="goal-detail"),
     path("trainees", _trainee_list, name="trainee-list"),
     path("trainees/<int:pk>", _trainee_detail, name="trainee-detail"),
+    # P8 chat: thread (GET) + send (POST), and mark-read-once (POST). Access is
+    # the symmetric ``can_communicate_with`` gate (MessageAccessPermission).
+    path("messages", MessagesView.as_view(), name="message-list"),
+    path("messages/read", MessageReadView.as_view(), name="message-read"),
+    # P8 data-lifecycle (privacy): self-only export + destructive account delete.
+    path("me/export", MeExportView.as_view(), name="me-export"),
+    path("me", AccountDeleteView.as_view(), name="me-delete"),
 ]

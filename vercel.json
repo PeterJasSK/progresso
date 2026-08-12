@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd frontend && npm ci && npm run build && cd .. && python manage.py collectstatic --noinput",
+  "builds": [
+    { "src": "progresso/wsgi.py", "use": "@vercel/python" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "progresso/wsgi.py" },
+    { "src": "/admin/(.*)", "dest": "progresso/wsgi.py" },
+    { "src": "/(.*)", "dest": "progresso/wsgi.py" }
+  ]
+}

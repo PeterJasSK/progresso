@@ -138,6 +138,12 @@ class Measurement(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            # The per-trainee list/feed read is filter(user=...) ordered by
+            # -created_at; the composite index keeps it index-backed as histories
+            # grow (P8 §5.5, AC-7). `user` FK alone doesn't cover the ordering.
+            models.Index(fields=["user", "-created_at"]),
+        ]
 
     @property
     def bmi(self) -> Decimal | None:

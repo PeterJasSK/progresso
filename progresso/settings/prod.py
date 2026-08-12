@@ -23,6 +23,16 @@ if not os.environ.get("DATABASE_URL"):
 if not os.environ.get("BLOB_READ_WRITE_TOKEN"):
     raise RuntimeError("BLOB_READ_WRITE_TOKEN is required in production.")
 
+# WhiteNoise compressed+hashed storage for the collected admin/DRF static assets
+# (P8 §5.10). The SPA's own assets are already Vite-hashed and served from
+# WHITENOISE_ROOT, so this only governs collectstatic output.
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
 # Secure session/CSRF cookies over HTTPS (epic Q2).
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True

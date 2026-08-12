@@ -6,7 +6,8 @@
   "common": {
     "loading": "Načítava sa…",
     "optional": "nepovinné",
-    "submitting": "Čakajte prosím…"
+    "submitting": "Čakajte prosím…",
+    "cancel": "Zrušiť"
   },
   "theme": {
     "label": "Motív",
@@ -26,13 +27,15 @@
     "measurements": "Merania",
     "progress": "Pokrok",
     "goals": "Ciele",
+    "chat": "Chat",
     "trainer": {
       "roster": "Klienti",
       "overview": "Prehľad",
       "measurements": "Merania",
       "progress": "Pokrok",
       "photos": "Fotky",
-      "goals": "Ciele"
+      "goals": "Ciele",
+      "chat": "Chat"
     }
   },
   "roles": {
@@ -182,6 +185,24 @@
       "reopen": "Znovu otvoriť"
     }
   },
+  "chat": {
+    "title": "Chat",
+    "empty": "Zatiaľ žiadne správy. Pozdravte sa.",
+    "placeholder": "Napíšte správu…",
+    "send": "Odoslať",
+    "noTrainer": "Na začatie chatu si prepojte trénera.",
+    "linkTrainer": "Prepojiť trénera"
+  },
+  "data": {
+    "title": "Vaše údaje",
+    "description": "Stiahnite si všetko, čo ste zaznamenali, alebo natrvalo zmažte svoj účet.",
+    "export": "Exportovať moje údaje",
+    "delete": "Zmazať môj účet",
+    "deleteWarning": "Týmto natrvalo zmažete svoj účet a všetky svoje údaje. Nedá sa to vrátiť.",
+    "deletePrompt": "Na potvrdenie napíšte {{word}}.",
+    "deleteConfirmWord": "ZMAZAŤ",
+    "deleteConfirm": "Zmazať navždy"
+  },
   "errors": {
     "invalid_credentials": "Nesprávne používateľské meno alebo heslo.",
     "username_taken": "Toto používateľské meno je už obsadené.",
@@ -198,6 +219,10 @@
     "invalid_direction": "Tento smer nie je platný.",
     "missing_target": "Zadajte cieľovú hodnotu.",
     "target_out_of_range": "Táto cieľová hodnota je mimo povoleného rozsahu.",
+    "empty_message": "Pred odoslaním napíšte správu.",
+    "unknown_recipient": "Táto osoba sa nenašla.",
+    "not_related": "Chatovať môžete len so svojím trénerom alebo cvičencom.",
+    "rate_limited": "Priveľa pokusov. Počkajte minútu a skúste znova.",
     "unknown": "Niečo sa pokazilo. Skúste to znova."
   },
   "notfound": {
