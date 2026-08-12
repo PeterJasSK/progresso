@@ -3,6 +3,21 @@
     "name": "Progresso",
     "tagline": "Sleduj každé opakovanie svojej cesty."
   },
+  "landing": {
+    "title": "Ako to funguje",
+    "step1": {
+      "title": "Zaznamenaj",
+      "body": "Každý týždeň zaznamenaj svoje telesné miery a fotku pokroku."
+    },
+    "step2": {
+      "title": "Prehľad",
+      "body": "Tvoj tréner sleduje tvoje trendy a porovnáva tvoje fotky v čase."
+    },
+    "step3": {
+      "title": "Uprav",
+      "body": "Píšeš si s trénerom a spoločne upravíte tvoj plán."
+    }
+  },
   "common": {
     "loading": "Načítava sa…",
     "optional": "nepovinné",

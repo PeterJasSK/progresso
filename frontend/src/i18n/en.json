@@ -3,6 +3,21 @@
     "name": "Progresso",
     "tagline": "Track every rep of the journey."
   },
+  "landing": {
+    "title": "How it works",
+    "step1": {
+      "title": "Log",
+      "body": "Record your body measurements and a progress photo each week."
+    },
+    "step2": {
+      "title": "Review",
+      "body": "Your trainer reviews your trends and compares your photos over time."
+    },
+    "step3": {
+      "title": "Adjust",
+      "body": "You chat with your trainer and adjust your plan together."
+    }
+  },
   "common": {
     "loading": "Loading…",
     "optional": "optional",

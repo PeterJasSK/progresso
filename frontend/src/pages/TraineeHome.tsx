@@ -15,13 +15,14 @@ import { Button } from '../components/Button'
 import { Pill } from '../components/Pill'
 import { Spinner } from '../components/Spinner'
 import { getSeries, type Series, type MetricSummary } from '../lib/measurements'
-import { METRIC_BY_KEY, type MetricKey } from '../lib/metricMeta'
+import { METRICS } from '../lib/metricMeta'
 import { formatWithUnit } from '../lib/format'
 import { formatDate } from '../i18n'
 
 const OVERDUE_DAYS = 7
-// Metrics that get a compact chart on the dashboard, when they have ≥2 points.
-const CHART_METRICS: MetricKey[] = ['weight', 'waist', 'chest']
+// Compact charts on the dashboard show only the tail of the history so they stay
+// legible; the stat tiles above still reflect the true latest value (P11 §4).
+const CHART_WINDOW = 4
 
 function isOverdue(dates: string[]): boolean {
   if (dates.length === 0) return true
@@ -39,9 +40,6 @@ function deltaText(summary: MetricSummary | undefined, unit: string): string | u
   const sign = summary.delta > 0 ? '+' : summary.delta < 0 ? '−' : ''
   return `${sign}${formatWithUnit(Math.abs(summary.delta), unit)}`
 }
-
-// Which secondary metrics to show under the hero, when present.
-const SECONDARY: MetricKey[] = ['waist', 'chest']
 
 export function TraineeHome() {
   const { t } = useTranslation()
@@ -72,11 +70,15 @@ export function TraineeHome() {
   }
 
   const hasData = series !== null && series.dates.length > 0
-  const weightMeta = METRIC_BY_KEY.weight
-  // Charts need ≥2 points to draw a line; the rest fall back to a hint.
-  const chartable = hasData
-    ? CHART_METRICS.filter((key) => (series!.metrics[key]?.filter((v) => v !== null).length ?? 0) >= 2)
-    : []
+  // Every metric the trainee has actually logged (has a summary), in canonical
+  // METRICS order — weight first … body_fat_pct … BMI last (P11 §4).
+  const present = hasData ? METRICS.filter((m) => series!.summary[m.key]) : []
+  // Charts window to the latest CHART_WINDOW entries; a metric charts only when its
+  // windowed slice still has ≥2 non-null points to draw a line.
+  const dates4 = hasData ? series!.dates.slice(-CHART_WINDOW) : []
+  const chartable = present.filter(
+    (m) => (series!.metrics[m.key]?.slice(-CHART_WINDOW).filter((v) => v !== null).length ?? 0) >= 2,
+  )
 
   return (
     <AppShell>
@@ -113,20 +115,11 @@ export function TraineeHome() {
             </span>
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <StatTile
-              label={t(weightMeta.labelKey)}
-              value={formatWithUnit(series!.summary.weight?.latest ?? null, weightMeta.unit)}
-              delta={deltaText(series!.summary.weight, weightMeta.unit)}
-              deltaLabel={t('home.trainee.delta')}
-              trend={trendOf(series!.summary.weight)}
-            />
-            {SECONDARY.map((key) => {
-              const meta = METRIC_BY_KEY[key]
-              const summary = series!.summary[key]
-              if (!summary) return null
+            {present.map((meta) => {
+              const summary = series!.summary[meta.key]!
               return (
                 <StatTile
-                  key={key}
+                  key={meta.key}
                   label={t(meta.labelKey)}
                   value={formatWithUnit(summary.latest, meta.unit)}
                   delta={deltaText(summary, meta.unit)}
@@ -154,24 +147,21 @@ export function TraineeHome() {
             </p>
           ) : (
             <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {chartable.map((key) => {
-                const meta = METRIC_BY_KEY[key]
-                return (
-                  <Card key={key}>
-                    <p className="mb-2 font-sans text-sm text-muted">
-                      {t(meta.labelKey)}
-                    </p>
-                    <MetricChart
-                      labels={series!.dates}
-                      data={series!.metrics[key]!}
-                      colorVar={meta.colorVar}
-                      label={t(meta.labelKey)}
-                      theme={theme}
-                      size="compact"
-                    />
-                  </Card>
-                )
-              })}
+              {chartable.map((meta) => (
+                <Card key={meta.key}>
+                  <p className="mb-2 font-sans text-sm text-muted">
+                    {t(meta.labelKey)}
+                  </p>
+                  <MetricChart
+                    labels={dates4}
+                    data={series!.metrics[meta.key]!.slice(-CHART_WINDOW)}
+                    colorVar={meta.colorVar}
+                    label={t(meta.labelKey)}
+                    theme={theme}
+                    size="compact"
+                  />
+                </Card>
+              ))}
             </div>
           )}
         </>

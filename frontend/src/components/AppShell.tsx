@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { ReactNode } from 'react'
 import { useAuth } from '../auth/useAuth'
+import { roleHome } from '../auth/AuthProvider'
 import { ThemeToggle } from './ThemeToggle'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { Avatar } from './Avatar'
@@ -29,9 +30,19 @@ export function AppShell({ children, actionBar }: AppShellProps) {
     <div className="min-h-screen bg-bgdeep">
       <header className="border-b border-border bg-bg">
         <div className="mx-auto flex max-w-[1080px] items-center gap-3 px-4 py-3">
-          <span className="font-display text-lg font-bold text-heading">
-            <span className="text-accent">◆</span> {t('app.name').toUpperCase()}
-          </span>
+          {user ? (
+            <Link
+              to={roleHome(user.role)}
+              aria-label={t('nav.home')}
+              className="rounded font-display text-lg font-bold text-heading focus:outline-none focus:ring-2 focus:ring-accent hover:opacity-80"
+            >
+              <span className="text-accent">◆</span> {t('app.name').toUpperCase()}
+            </Link>
+          ) : (
+            <span className="font-display text-lg font-bold text-heading">
+              <span className="text-accent">◆</span> {t('app.name').toUpperCase()}
+            </span>
+          )}
           <div className="ml-auto flex items-center gap-2">
             <LanguageSwitcher />
             <ThemeToggle />

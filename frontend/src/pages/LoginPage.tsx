@@ -12,6 +12,7 @@ import { Input } from '../components/Input'
 import { Button } from '../components/Button'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { LanguageSwitcher } from '../components/LanguageSwitcher'
+import { HowItWorks } from '../components/HowItWorks'
 
 export function LoginPage() {
   const { t } = useTranslation()
@@ -45,12 +46,13 @@ export function LoginPage() {
         <LanguageSwitcher />
         <ThemeToggle />
       </div>
-      <div className="mx-auto max-w-sm pt-8">
+      <div className="mx-auto max-w-2xl pt-8">
         <h1 className="mb-1 font-display text-2xl font-bold text-heading">
           <span className="text-accent">◆</span> {t('app.name').toUpperCase()}
         </h1>
         <p className="mb-6 font-sans text-sm text-muted">{t('app.tagline')}</p>
-        <Card>
+        <div className="mx-auto max-w-sm">
+          <Card>
           <h2 className="mb-4 font-display text-xl text-heading">{t('auth.login.title')}</h2>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <label className="flex flex-col gap-1 font-sans text-sm text-text">
@@ -87,7 +89,9 @@ export function LoginPage() {
               {t('auth.login.registerLink')}
             </Link>
           </p>
-        </Card>
+          </Card>
+        </div>
+        <HowItWorks />
       </div>
     </div>
   )
