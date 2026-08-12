@@ -28,6 +28,7 @@
     "progress": "Pokrok",
     "goals": "Ciele",
     "chat": "Chat",
+    "profile": "Profil",
     "trainer": {
       "roster": "Klienti",
       "overview": "Prehľad",
@@ -86,6 +87,10 @@
       "title": "Váš pokrok",
       "delta": "oproti minulému záznamu"
     },
+    "charts": {
+      "title": "Trendy",
+      "viewAll": "Zobraziť všetko"
+    },
     "trainer": {
       "title": "Kokpit trénera",
       "delta": "oproti včerajšku",
@@ -95,6 +100,17 @@
       "pickPlaceholder": "— vyberte trénera —",
       "link": "Prepojiť",
       "unlink": "Zrušiť prepojenie"
+    }
+  },
+  "profile": {
+    "title": "Profil",
+    "back": "Späť na domov",
+    "height": {
+      "title": "Výška",
+      "description": "Nastavuje sa raz — používa sa na výpočet BMI. Mení sa zriedka, takže ju nezadávate pri každom meraní.",
+      "label": "Výška",
+      "save": "Uložiť výšku",
+      "saved": "Výška uložená."
     }
   },
   "measurements": {

@@ -28,6 +28,7 @@
     "progress": "Progress",
     "goals": "Goals",
     "chat": "Chat",
+    "profile": "Profile",
     "trainer": {
       "roster": "Roster",
       "overview": "Overview",
@@ -86,6 +87,10 @@
       "title": "Your progress",
       "delta": "vs last entry"
     },
+    "charts": {
+      "title": "Trends",
+      "viewAll": "View all"
+    },
     "trainer": {
       "title": "Trainer cockpit",
       "delta": "vs yesterday",
@@ -95,6 +100,17 @@
       "pickPlaceholder": "— choose a trainer —",
       "link": "Link",
       "unlink": "Unlink"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "back": "Back to home",
+    "height": {
+      "title": "Height",
+      "description": "Set once — used to compute your BMI. It rarely changes, so you don't log it with every measurement.",
+      "label": "Height",
+      "save": "Save height",
+      "saved": "Height saved."
     }
   },
   "measurements": {

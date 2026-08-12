@@ -6,7 +6,10 @@ decision may live anywhere else.
 """
 from __future__ import annotations
 
+from decimal import Decimal
+
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Q
 
@@ -35,6 +38,20 @@ class CustomUser(AbstractUser):
         blank=True,
         on_delete=models.SET_NULL,
         related_name="trainees",
+    )
+    # Body height is a once-set profile attribute (P9), not a per-measurement
+    # field: it barely changes, so BMI sources it from here x each measurement's
+    # weight. Nullable until the trainee sets it (BMI is then ``None``, exactly as
+    # when height was absent on a row). Range mirrors the old measurement band.
+    height_cm = models.DecimalField(
+        max_digits=5,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(Decimal("50")),
+            MaxValueValidator(Decimal("250")),
+        ],
     )
     # Shaped for post-MVP helper access; not consulted by any MVP grant (epic Q3).
     helpers = models.ManyToManyField(

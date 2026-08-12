@@ -5,6 +5,8 @@ are translation *keys*, not English prose, so the frontend localizes (epic Q6).
 """
 from __future__ import annotations
 
+from decimal import Decimal
+
 from django.contrib.auth import password_validation
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -28,7 +30,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     ``head_trainer``/``head_trainer_name`` let the SPA show and manage a trainee's
     coach link (self-service linking); both are read-only here — linking goes
-    through :class:`LinkTrainerSerializer` on ``PATCH /auth/me``. Null for trainers
+    through :class:`ProfileUpdateSerializer` on ``PATCH /auth/me``. Null for trainers
     and for unassigned (self-tracking) trainees. No password/email leak.
     """
 
@@ -36,24 +38,47 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ("id", "username", "role", "head_trainer", "head_trainer_name")
-        read_only_fields = ("head_trainer",)
+        fields = (
+            "id",
+            "username",
+            "role",
+            "head_trainer",
+            "head_trainer_name",
+            "height_cm",
+        )
+        read_only_fields = ("head_trainer", "height_cm")
 
     def get_head_trainer_name(self, obj: CustomUser) -> str | None:
         trainer = obj.head_trainer
         return (trainer.get_full_name() or trainer.username) if trainer else None
 
 
-class LinkTrainerSerializer(serializers.Serializer):
-    """Self-service trainer link/unlink for a trainee (P7 §5.3b).
+class ProfileUpdateSerializer(serializers.Serializer):
+    """Self-service profile edit for a trainee (P7 linking + P9 height).
 
-    ``trainer_id`` names an existing trainer to attach, or ``null`` to unlink (back
-    to self-tracking). Trainee-only + self-only — the view forces the target to
-    ``request.user`` (no ``?user=``). Error ``detail`` is a translation key
-    (epic Q6): ``invalid_trainer``.
+    Both fields are **optional** — a request may set either or both:
+
+    * ``trainer_id`` names an existing trainer to attach, or ``null`` to unlink
+      (back to self-tracking) — the P7 self-service link/unlink.
+    * ``height_cm`` sets the once-set profile height (50–250), or ``null`` to
+      clear it — the P9 move of height off the per-measurement capture form.
+
+    Trainee-only + self-only — the view forces the target to ``request.user`` (no
+    ``?user=``). Error ``detail`` is a translation key (epic Q6):
+    ``invalid_trainer``; out-of-range height surfaces DRF's field key.
     """
 
-    trainer_id = serializers.IntegerField(allow_null=True)
+    trainer_id = serializers.IntegerField(required=False, allow_null=True)
+    height_cm = serializers.DecimalField(
+        required=False,
+        allow_null=True,
+        max_digits=5,
+        decimal_places=1,
+        validators=[
+            MinValueValidator(Decimal("50")),
+            MaxValueValidator(Decimal("250")),
+        ],
+    )
 
     def validate_trainer_id(self, value: int | None) -> int | None:
         if value is None:
@@ -67,10 +92,19 @@ class LinkTrainerSerializer(serializers.Serializer):
         return value
 
     def save(self, *, user: CustomUser) -> CustomUser:
-        user.head_trainer = (
-            None if self.validated_data["trainer_id"] is None else self._trainer
-        )
-        user.save(update_fields=["head_trainer"])
+        update_fields: list[str] = []
+        if "trainer_id" in self.validated_data:
+            user.head_trainer = (
+                None
+                if self.validated_data["trainer_id"] is None
+                else self._trainer
+            )
+            update_fields.append("head_trainer")
+        if "height_cm" in self.validated_data:
+            user.height_cm = self.validated_data["height_cm"]
+            update_fields.append("height_cm")
+        if update_fields:
+            user.save(update_fields=update_fields)
         return user
 
 
@@ -250,7 +284,6 @@ class MeasurementSerializer(serializers.ModelSerializer):
             "user",
             "unit_system",
             "weight",
-            "height",
             "chest",
             "waist",
             "hips",
@@ -290,9 +323,10 @@ class MeasurementSerializer(serializers.ModelSerializer):
 
     # The body-metric value fields. "At least one present" is enforced so an
     # all-null entry (meaningless) is rejected on create.
+    # Height left the capture surface in P9 (once-set profile attribute); it is no
+    # longer a writable/serialized measurement field (still a DB column, deprecated).
     _VALUE_FIELDS = (
         "weight",
-        "height",
         "chest",
         "waist",
         "hips",
@@ -305,7 +339,6 @@ class MeasurementSerializer(serializers.ModelSerializer):
     # Tight, unit-aware bands (§5.2). (metric_lo, metric_hi, imperial_lo, imperial_hi).
     _BANDS = {
         "weight": (20, 400, 44, 880),
-        "height": (50, 250, 20, 98),
         "chest": (10, 250, 4, 100),
         "waist": (10, 250, 4, 100),
         "hips": (10, 250, 4, 100),

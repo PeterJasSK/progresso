@@ -14,6 +14,9 @@ export interface User {
   // (self-tracking) trainees.
   head_trainer?: number | null
   head_trainer_name?: string | null
+  // The trainee's once-set profile height in cm (P9). Null until set; null for
+  // trainers. Serialized as a string (DRF decimal coercion).
+  height_cm?: string | null
 }
 
 export interface RegisterInput {

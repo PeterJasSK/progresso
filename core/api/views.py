@@ -33,10 +33,10 @@ from core.services import chart_data, roster
 from core.api.serializers import (
     GoalSerializer,
     GoalToggleSerializer,
-    LinkTrainerSerializer,
     MeasurementSerializer,
     MessageCreateSerializer,
     MessageSerializer,
+    ProfileUpdateSerializer,
     RegisterSerializer,
     RosterEntrySerializer,
     TrainerOptionSerializer,
@@ -129,10 +129,11 @@ class LogoutView(APIView):
 class MeView(APIView):
     """GET/PATCH /auth/me — current user; seeds the csrftoken cookie for the SPA.
 
-    ``PATCH`` is the trainee's self-service trainer link/unlink (P7 §5.3b):
-    ``{trainer_id: <id>|null}`` sets/clears **their own** ``head_trainer`` (null =
-    back to self-tracking). Trainee-only + self-only — the target is always
-    ``request.user``, never a ``?user=`` id, so no ``can_access`` is needed.
+    ``PATCH`` is the trainee's self-service profile edit (P7 trainer link + P9
+    height): ``{trainer_id: <id>|null}`` sets/clears **their own** ``head_trainer``
+    (null = self-tracking) and/or ``{height_cm: <n>|null}`` sets/clears the once-set
+    profile height. Both fields optional. Trainee-only + self-only — the target is
+    always ``request.user``, never a ``?user=`` id, so no ``can_access`` is needed.
     """
 
     permission_classes = [IsAuthenticated]
@@ -142,12 +143,12 @@ class MeView(APIView):
 
     def patch(self, request: Request) -> Response:
         if request.user.role != Role.TRAINEE:
-            # Only trainees have a head trainer; trainers self-track by definition.
+            # Only trainees carry a head trainer / BMI height; trainers self-track.
             return Response(
                 {"detail": "not_a_trainee"},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        serializer = LinkTrainerSerializer(data=request.data)
+        serializer = ProfileUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(user=request.user)
         return Response(UserSerializer(request.user).data)
@@ -263,8 +264,10 @@ class GoalViewSet(TargetUserMixin, viewsets.ModelViewSet):
         ).select_related("user")
 
     def perform_create(self, serializer: GoalSerializer) -> None:
-        # Owner is forced to the caller — any ``user`` in the body is ignored.
-        serializer.save(user=self.request.user)
+        # Owner is the resolved target (P9): self for a trainee, the addressed
+        # ``?user=`` trainee for a trainer. The permission already asserted
+        # can_access(target); any ``user`` in the body is ignored.
+        serializer.save(user=self.get_target_user(self.request))
 
 
 class TraineeViewSet(viewsets.ReadOnlyModelViewSet):

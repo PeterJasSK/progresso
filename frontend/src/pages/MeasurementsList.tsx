@@ -25,18 +25,20 @@ export function MeasurementsList() {
     }
   }, [])
 
-  const cta = (
-    <Button className="w-full" onClick={() => navigate('/me/measurements/new')}>
-      {t('measurements.logNew')}
-    </Button>
-  )
-
   return (
-    <AppShell actionBar={cta}>
+    <AppShell>
       <TraineeNav />
-      <h1 className="mb-4 font-display text-2xl font-bold text-heading">
-        {t('measurements.title')}
-      </h1>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <h1 className="font-display text-2xl font-bold text-heading">
+          {t('measurements.title')}
+        </h1>
+        <Button
+          className="ml-auto"
+          onClick={() => navigate('/me/measurements/new')}
+        >
+          {t('measurements.logNew')}
+        </Button>
+      </div>
 
       {error && <p className="font-sans text-sm text-danger">{t('errors.unknown')}</p>}
       {!error && items === null && <Spinner />}

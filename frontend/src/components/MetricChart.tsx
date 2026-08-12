@@ -36,6 +36,8 @@ interface MetricChartProps {
   label: string
   // Active theme — passed so colors re-resolve when it flips.
   theme: string
+  // Chart height: 'full' (default, /me/progress) or 'compact' (dashboard mini).
+  size?: 'full' | 'compact'
 }
 
 function cssVar(name: string): string {
@@ -44,7 +46,14 @@ function cssVar(name: string): string {
 
 const MONO_FONT = "'JetBrains Mono', monospace"
 
-export function MetricChart({ labels, data, colorVar, label, theme }: MetricChartProps) {
+export function MetricChart({
+  labels,
+  data,
+  colorVar,
+  label,
+  theme,
+  size = 'full',
+}: MetricChartProps) {
   const { chartData, options } = useMemo(() => {
     // `theme` is read below via cssVar; referenced here so the memo re-runs on toggle.
     void theme
@@ -87,7 +96,7 @@ export function MetricChart({ labels, data, colorVar, label, theme }: MetricChar
   }, [labels, data, colorVar, label, theme])
 
   return (
-    <div className="h-72 w-full">
+    <div className={`${size === 'compact' ? 'h-40' : 'h-72'} w-full`}>
       <Line data={chartData} options={options} />
     </div>
   )

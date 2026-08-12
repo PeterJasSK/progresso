@@ -1,7 +1,7 @@
 // Authenticated frame: topbar (logo, theme + language toggles, logout) + centered
 // max-width content column, mobile-first. actionBar is a slot P6 fills with its primary
 // CTA on mobile. All chrome labels come through i18n.
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { ReactNode } from 'react'
 import { useAuth } from '../auth/useAuth'
@@ -35,7 +35,15 @@ export function AppShell({ children, actionBar }: AppShellProps) {
           <div className="ml-auto flex items-center gap-2">
             <LanguageSwitcher />
             <ThemeToggle />
-            {user && <Avatar name={user.username} />}
+            {user && (
+              <Link
+                to="/profile"
+                aria-label={t('nav.profile')}
+                className="rounded-full focus:outline-none focus:ring-2 focus:ring-accent hover:opacity-80"
+              >
+                <Avatar name={user.username} />
+              </Link>
+            )}
             <Button variant="ghost" onClick={handleLogout}>
               {t('nav.logout')}
             </Button>

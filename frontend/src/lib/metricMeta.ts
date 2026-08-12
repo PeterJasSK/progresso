@@ -41,9 +41,12 @@ export const METRICS: readonly MetricMeta[] = [
   { key: 'bmi', labelKey: 'metrics.bmi', unit: '', colorVar: '--accent', goalTarget: false },
 ]
 
-// The value fields a trainee can enter on the capture form (everything except the
-// derived BMI, which the server computes).
-export const VALUE_METRICS: readonly MetricMeta[] = METRICS.filter((m) => m.key !== 'bmi')
+// The value fields a trainee can enter on the capture form: everything except the
+// derived BMI (server-computed) and height (a once-set profile attribute set on
+// /profile, not per measurement — P9).
+export const VALUE_METRICS: readonly MetricMeta[] = METRICS.filter(
+  (m) => m.key !== 'bmi' && m.key !== 'height',
+)
 
 // The metrics a goal may target (§11 Q6).
 export const GOAL_METRICS: readonly MetricMeta[] = METRICS.filter((m) => m.goalTarget)

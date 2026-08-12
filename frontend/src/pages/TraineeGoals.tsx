@@ -1,12 +1,14 @@
-// /trainer/trainees/:id/goals — the trainee's goals, view + toggle-complete
-// (P7 §5.6, AC-5). The one goal write P7 adds: the trainer flips is_completed via
-// PATCH /goals/:id. No add-goal form here (creation is trainee-only, P6).
-import { useEffect, useState } from 'react'
+// /trainer/trainees/:id/goals — the trainee's goals: view, toggle-complete
+// (P7), and author a new goal for the trainee (P9). The trainer flips
+// is_completed via PATCH /goals/:id and creates via POST /goals?user=:id — both
+// gated by can_access.
+import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AppShell } from '../components/AppShell'
 import { TrainerNav } from '../components/TrainerNav'
 import { GoalCard } from '../components/GoalCard'
+import { GoalForm } from '../components/GoalForm'
 import { Spinner } from '../components/Spinner'
 import { getTrainee, type RosterEntry } from '../lib/trainees'
 import { listGoals, toggleGoal, type Goal } from '../lib/goals'
@@ -34,6 +36,12 @@ export function TraineeGoals() {
     }
   }, [traineeId])
 
+  const reloadGoals = useCallback(() => {
+    listGoals(traineeId)
+      .then(setGoals)
+      .catch(() => setError(true))
+  }, [traineeId])
+
   async function handleToggle(goal: Goal): Promise<void> {
     setTogglingId(goal.id)
     try {
@@ -56,6 +64,8 @@ export function TraineeGoals() {
       <h1 className="mb-4 font-display text-2xl font-bold text-heading">
         {t('nav.trainer.goals')}
       </h1>
+
+      <GoalForm userId={traineeId} onCreated={reloadGoals} />
 
       {error && <p className="font-sans text-sm text-danger">{t('errors.unknown')}</p>}
       {!error && goals === null && <Spinner />}

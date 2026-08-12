@@ -147,11 +147,15 @@ class Measurement(models.Model):
 
     @property
     def bmi(self) -> Decimal | None:
-        """Computed BMI for this row (P4) — ``None`` if weight or height is
-        missing. Delegates to :func:`core.services.metrics.bmi` (metric-only, 1
-        dp); no DB column, computed on read (plan §5.1).
+        """Computed BMI for this row — ``None`` if weight or the owner's profile
+        height is missing. Height is a once-set profile attribute (P9), so BMI
+        sources it from ``self.user.height_cm`` x this row's weight (no longer the
+        old per-row ``height`` column). Delegates to
+        :func:`core.services.metrics.bmi` (metric-only, 1 dp); no DB column,
+        computed on read. Serializing ``bmi`` over a list requires
+        ``select_related("user")`` to stay N+1-free (plan §5.1).
         """
-        return metrics.bmi(self.weight, self.height)
+        return metrics.bmi(self.weight, self.user.height_cm)
 
     def __str__(self) -> str:
         return f"{self.user} @ {self.created_at:%Y-%m-%d}"

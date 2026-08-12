@@ -129,8 +129,9 @@ class GoalAccessPermission(BasePermission):
     Shaped like :class:`MeasurementAccessPermission`, with the endpoint concerns
     the goal routes require (mvp-routes.md §C):
 
-    * **create** is trainee-only and always for ``self`` (owner forced in the
-      view); role gating reuses :class:`IsTrainee`.
+    * **create** (P9): a trainee authors their own goal, or a trainer authors one
+      for a trainee they own (``?user=`` target, gated by ``can_access``). The
+      owner is resolved in the view via ``get_target_user``.
     * **toggle-complete** (``PATCH``, wired in P7) is allowed for the owner
       trainee *or* the trainer who owns the trainee — so P7 adds only the route,
       not new permission logic. Read stays gated by ``can_access``.
@@ -142,10 +143,19 @@ class GoalAccessPermission(BasePermission):
             return False
 
         if request.method == "POST":
-            if not IsTrainee().has_permission(request, view):
-                return False
+            # Create widened in P9: a trainee authors their own goal, OR a trainer
+            # authors one for a trainee they own. The owner is the ``?user=``
+            # target (else self); access is the single ``can_access`` predicate.
             target = view.get_target_user(request)
-            return target.pk == user.pk and user.can_access(target)
+            if not user.can_access(target):
+                return False
+            if user.role == Role.TRAINEE:
+                return target.pk == user.pk
+            if user.role == Role.TRAINER:
+                # can_access(target) already ⇒ this trainer owns the trainee;
+                # guard against a trainer authoring a goal "for themselves".
+                return target.pk != user.pk
+            return False
 
         resolver = getattr(view, "get_target_user", None)
         if resolver is None:

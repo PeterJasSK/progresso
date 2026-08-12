@@ -1,12 +1,15 @@
-// /me — trainee home. Latest measurement as a hero stat tile, a trend snapshot,
-// and a "log this week" CTA (nudged when overdue: no entry in the last 7 days).
+// /me — trainee dashboard (P9). Latest measurement as hero + secondary stat
+// tiles, small per-metric graphs over history, and a "log measurement" button by
+// the headline (overdue nudge: no entry in the last 7 days). Trainer link + data
+// export/delete moved to /profile.
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useTheme } from '../theme/useTheme'
 import { AppShell } from '../components/AppShell'
 import { TraineeNav } from '../components/TraineeNav'
-import { TrainerLink } from '../components/TrainerLink'
-import { DataSection } from '../components/DataSection'
+import { Card } from '../components/Card'
+import { MetricChart } from '../components/MetricChart'
 import { StatTile } from '../components/StatTile'
 import { Button } from '../components/Button'
 import { Pill } from '../components/Pill'
@@ -17,6 +20,8 @@ import { formatWithUnit } from '../lib/format'
 import { formatDate } from '../i18n'
 
 const OVERDUE_DAYS = 7
+// Metrics that get a compact chart on the dashboard, when they have ≥2 points.
+const CHART_METRICS: MetricKey[] = ['weight', 'waist', 'chest']
 
 function isOverdue(dates: string[]): boolean {
   if (dates.length === 0) return true
@@ -40,6 +45,7 @@ const SECONDARY: MetricKey[] = ['waist', 'chest']
 
 export function TraineeHome() {
   const { t } = useTranslation()
+  const { theme } = useTheme()
   const navigate = useNavigate()
   const [series, setSeries] = useState<Series | null>(null)
   const [loading, setLoading] = useState(true)
@@ -56,12 +62,6 @@ export function TraineeHome() {
     }
   }, [])
 
-  const cta = (
-    <Button className="w-full" onClick={() => navigate('/me/measurements/new')}>
-      {t('home.logThisWeek')}
-    </Button>
-  )
-
   if (loading) {
     return (
       <AppShell>
@@ -73,20 +73,28 @@ export function TraineeHome() {
 
   const hasData = series !== null && series.dates.length > 0
   const weightMeta = METRIC_BY_KEY.weight
+  // Charts need ≥2 points to draw a line; the rest fall back to a hint.
+  const chartable = hasData
+    ? CHART_METRICS.filter((key) => (series!.metrics[key]?.filter((v) => v !== null).length ?? 0) >= 2)
+    : []
 
   return (
-    <AppShell actionBar={cta}>
+    <AppShell>
       <TraineeNav />
-      <div className="mb-4 flex items-center gap-3">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
         <h1 className="font-display text-2xl font-bold text-heading">
           {t('home.trainee.title')}
         </h1>
         {hasData && isOverdue(series!.dates) && (
           <Pill variant="warn">{t('home.overdue')}</Pill>
         )}
+        <Button
+          className="ml-auto"
+          onClick={() => navigate('/me/measurements/new')}
+        >
+          {t('home.logThisWeek')}
+        </Button>
       </div>
-
-      <TrainerLink />
 
       {error && (
         <p className="font-sans text-sm text-danger">{t('errors.unknown')}</p>
@@ -128,10 +136,46 @@ export function TraineeHome() {
               )
             })}
           </div>
+
+          <div className="mt-6 flex items-center justify-between gap-3">
+            <h2 className="font-display text-lg font-bold text-heading">
+              {t('home.charts.title')}
+            </h2>
+            <Link
+              to="/me/progress"
+              className="font-sans text-sm text-accent hover:underline"
+            >
+              {t('home.charts.viewAll')}
+            </Link>
+          </div>
+          {chartable.length === 0 ? (
+            <p className="mt-2 font-sans text-sm text-muted">
+              {t('progress.needMore')}
+            </p>
+          ) : (
+            <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {chartable.map((key) => {
+                const meta = METRIC_BY_KEY[key]
+                return (
+                  <Card key={key}>
+                    <p className="mb-2 font-sans text-sm text-muted">
+                      {t(meta.labelKey)}
+                    </p>
+                    <MetricChart
+                      labels={series!.dates}
+                      data={series!.metrics[key]!}
+                      colorVar={meta.colorVar}
+                      label={t(meta.labelKey)}
+                      theme={theme}
+                      size="compact"
+                    />
+                  </Card>
+                )
+              })}
+            </div>
+          )}
         </>
       )}
-
-      <DataSection />
     </AppShell>
   )
 }

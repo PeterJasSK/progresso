@@ -26,6 +26,7 @@ import { TraineeMeasurementDetail } from './pages/TraineeMeasurementDetail'
 import { TraineeProgress } from './pages/TraineeProgress'
 import { PhotoCompare } from './pages/PhotoCompare'
 import { TraineeGoals } from './pages/TraineeGoals'
+import { ProfilePage } from './pages/ProfilePage'
 
 function LogoutRoute() {
   const { logout } = useAuth()
@@ -45,6 +46,12 @@ function trainee(el: ReactNode) {
   )
 }
 
+// Wrap an authenticated screen with no role restriction — both roles reach it
+// (P9 /profile: content is role-conditional inside the page).
+function authed(el: ReactNode) {
+  return <RequireAuth>{el}</RequireAuth>
+}
+
 // Wrap a trainer screen in the auth + role guards (trainer-only, P7 §5.4).
 function trainer(el: ReactNode) {
   return (
@@ -61,6 +68,7 @@ export function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/logout" element={<LogoutRoute />} />
       <Route path="/" element={<RootRedirect />} />
+      <Route path="/profile" element={authed(<ProfilePage />)} />
       <Route path="/me" element={trainee(<TraineeHome />)} />
       <Route path="/me/measurements" element={trainee(<MeasurementsList />)} />
       <Route path="/me/measurements/new" element={trainee(<MeasurementForm />)} />

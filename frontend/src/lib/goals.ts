@@ -32,8 +32,12 @@ export async function listGoals(userId?: number): Promise<Goal[]> {
   return page.results
 }
 
-export function createGoal(payload: GoalInput): Promise<Goal> {
-  return api.post<Goal>('/goals', payload)
+// Create a goal (P6 self; P9 trainer-for-trainee). Omit `userId` for the caller's
+// own goal; pass a trainee id (as a trainer) to author one for them — the backend
+// gates it through `can_access`.
+export function createGoal(payload: GoalInput, userId?: number): Promise<Goal> {
+  const q = userId === undefined ? '' : `?user=${userId}`
+  return api.post<Goal>(`/goals${q}`, payload)
 }
 
 // Toggle-complete (P7): owner trainee or the trainer who owns the trainee. Only

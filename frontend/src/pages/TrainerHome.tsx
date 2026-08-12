@@ -8,7 +8,6 @@ import { useTranslation } from 'react-i18next'
 import { AppShell } from '../components/AppShell'
 import { TrainerNav } from '../components/TrainerNav'
 import { RosterCard } from '../components/RosterCard'
-import { DataSection } from '../components/DataSection'
 import { Button } from '../components/Button'
 import { Spinner } from '../components/Spinner'
 import { listTrainees, type RosterEntry } from '../lib/trainees'
@@ -55,8 +54,6 @@ export function TrainerHome() {
           ))}
         </div>
       )}
-
-      <DataSection />
     </AppShell>
   )
 }

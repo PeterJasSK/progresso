@@ -4,8 +4,19 @@
 import { api } from './api'
 import type { User } from '../auth/AuthProvider'
 
+// Self-service profile edit (P9): set/clear the trainer link and/or the once-set
+// profile height in one PATCH. Both fields optional; omit one to leave it unchanged.
+export function updateProfile(patch: {
+  trainer_id?: number | null
+  height_cm?: number | null
+}): Promise<User> {
+  return api.patch<User>('/auth/me', patch)
+}
+
+// Trainer link/unlink — a thin wrapper over updateProfile so the PATCH path lives
+// in one place.
 export function linkTrainer(trainerId: number | null): Promise<User> {
-  return api.patch<User>('/auth/me', { trainer_id: trainerId })
+  return updateProfile({ trainer_id: trainerId })
 }
 
 // The caller's full data export (profile + measurements + goals + messages),

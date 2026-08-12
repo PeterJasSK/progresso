@@ -26,7 +26,6 @@ if TYPE_CHECKING:
 # list and a service must not import from the api layer (exploration note #4).
 _VALUE_FIELDS: Final[tuple[str, ...]] = (
     "weight",
-    "height",
     "chest",
     "waist",
     "hips",
@@ -94,7 +93,12 @@ def build_series(measurements: Iterable[Measurement]) -> dict:
     columns: dict[str, list[Decimal | None]] = {
         field: [getattr(row, field) for row in rows] for field in _VALUE_FIELDS
     }
-    columns["bmi"] = [metrics.bmi(row.weight, row.height) for row in rows]
+    # Height is a once-set profile attribute (P9): BMI uses the owner's single
+    # ``height_cm`` x each row's weight. All rows share one owner (the series is
+    # user-scoped); read it once. Caller passes a ``select_related("user")``
+    # queryset so this touches no extra query.
+    owner_height = rows[0].user.height_cm
+    columns["bmi"] = [metrics.bmi(row.weight, owner_height) for row in rows]
 
     metric_arrays: dict[str, list[float | None]] = {}
     summary: dict[str, dict] = {}
