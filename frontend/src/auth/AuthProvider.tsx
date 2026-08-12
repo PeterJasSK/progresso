@@ -10,6 +10,10 @@ export interface User {
   id: number
   username: string
   role: Role
+  // A trainee's linked trainer (P7 §5.3b). Null for trainers and for unassigned
+  // (self-tracking) trainees.
+  head_trainer?: number | null
+  head_trainer_name?: string | null
 }
 
 export interface RegisterInput {
@@ -25,6 +29,8 @@ interface AuthContextValue {
   login: (username: string, password: string) => Promise<User>
   register: (input: RegisterInput) => Promise<User>
   logout: () => Promise<void>
+  // Re-fetch the current user (e.g. after a trainee links/unlinks a trainer, P7).
+  refreshUser: () => Promise<void>
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -75,8 +81,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
   }, [])
 
+  const refreshUser = useCallback(async () => {
+    const u = await api.get<User>('/auth/me')
+    setUser(u)
+  }, [])
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, loading, login, register, logout, refreshUser }}
+    >
       {children}
     </AuthContext.Provider>
   )

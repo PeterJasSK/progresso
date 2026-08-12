@@ -10,6 +10,7 @@ from core.api.views import (
     MeasurementViewSet,
     MeView,
     RegisterView,
+    TraineeViewSet,
     TrainersView,
 )
 
@@ -24,10 +25,13 @@ _measurement_detail = MeasurementViewSet.as_view(
 )
 _measurement_photos = MeasurementViewSet.as_view({"get": "photos"})
 _measurement_series = MeasurementViewSet.as_view({"get": "series"})
-# P6: goals list/create. The ``goals/<int:pk>`` PATCH toggle-complete route is
-# P7 — ``GoalViewSet.as_view({"patch": "partial_update"})`` — the viewset +
-# permission already admit it.
+# P6: goals list/create. P7 adds the ``goals/<int:pk>`` PATCH toggle-complete
+# route — owner trainee or owning trainer flips ``is_completed``.
 _goal_list = GoalViewSet.as_view({"get": "list", "post": "create"})
+_goal_detail = GoalViewSet.as_view({"patch": "partial_update"})
+# P7 roster: list own trainees + one trainee summary (trainer-only, read-only).
+_trainee_list = TraineeViewSet.as_view({"get": "list"})
+_trainee_detail = TraineeViewSet.as_view({"get": "retrieve"})
 
 urlpatterns = [
     path("auth/register", RegisterView.as_view(), name="auth-register"),
@@ -47,4 +51,7 @@ urlpatterns = [
         name="measurement-detail",
     ),
     path("goals", _goal_list, name="goal-list"),
+    path("goals/<int:pk>", _goal_detail, name="goal-detail"),
+    path("trainees", _trainee_list, name="trainee-list"),
+    path("trainees/<int:pk>", _trainee_detail, name="trainee-detail"),
 ]

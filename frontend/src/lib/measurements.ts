@@ -78,3 +78,12 @@ export function deleteMeasurement(id: number): Promise<void> {
 export function getSeries(userId?: number): Promise<Series> {
   return api.get<Series>(`/measurements/series${userQuery(userId)}`)
 }
+
+// Measurements that have a photo, for the P7 compare picker (§5.5). Paginated
+// envelope; first page only (MVP).
+export async function listPhotos(userId?: number): Promise<Measurement[]> {
+  const page = await api.get<Paginated<Measurement>>(
+    `/measurements/photos${userQuery(userId)}`,
+  )
+  return page.results
+}

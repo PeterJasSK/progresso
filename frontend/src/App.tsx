@@ -16,7 +16,14 @@ import { MeasurementForm } from './pages/MeasurementForm'
 import { MeasurementDetail } from './pages/MeasurementDetail'
 import { Progress } from './pages/Progress'
 import { Goals } from './pages/Goals'
-import { TrainerHomePlaceholder } from './pages/TrainerHomePlaceholder'
+import { TrainerHome } from './pages/TrainerHome'
+import { AddTrainee } from './pages/AddTrainee'
+import { TraineeOverview } from './pages/TraineeOverview'
+import { TraineeMeasurements } from './pages/TraineeMeasurements'
+import { TraineeMeasurementDetail } from './pages/TraineeMeasurementDetail'
+import { TraineeProgress } from './pages/TraineeProgress'
+import { PhotoCompare } from './pages/PhotoCompare'
+import { TraineeGoals } from './pages/TraineeGoals'
 
 function LogoutRoute() {
   const { logout } = useAuth()
@@ -36,6 +43,15 @@ function trainee(el: ReactNode) {
   )
 }
 
+// Wrap a trainer screen in the auth + role guards (trainer-only, P7 §5.4).
+function trainer(el: ReactNode) {
+  return (
+    <RequireAuth>
+      <RequireRole role="trainer">{el}</RequireRole>
+    </RequireAuth>
+  )
+}
+
 export function App() {
   return (
     <Routes>
@@ -50,15 +66,28 @@ export function App() {
       <Route path="/me/measurements/:id/edit" element={trainee(<MeasurementForm />)} />
       <Route path="/me/progress" element={trainee(<Progress />)} />
       <Route path="/me/goals" element={trainee(<Goals />)} />
+      <Route path="/trainer" element={trainer(<TrainerHome />)} />
+      <Route path="/trainer/trainees/new" element={trainer(<AddTrainee />)} />
+      <Route path="/trainer/trainees/:id" element={trainer(<TraineeOverview />)} />
       <Route
-        path="/trainer"
-        element={
-          <RequireAuth>
-            <RequireRole role="trainer">
-              <TrainerHomePlaceholder />
-            </RequireRole>
-          </RequireAuth>
-        }
+        path="/trainer/trainees/:id/measurements"
+        element={trainer(<TraineeMeasurements />)}
+      />
+      <Route
+        path="/trainer/trainees/:id/measurements/:mid"
+        element={trainer(<TraineeMeasurementDetail />)}
+      />
+      <Route
+        path="/trainer/trainees/:id/progress"
+        element={trainer(<TraineeProgress />)}
+      />
+      <Route
+        path="/trainer/trainees/:id/photos"
+        element={trainer(<PhotoCompare />)}
+      />
+      <Route
+        path="/trainer/trainees/:id/goals"
+        element={trainer(<TraineeGoals />)}
       />
       <Route path="*" element={<NotFoundPage />} />
       <Route path="/index.html" element={<Navigate to="/" replace />} />

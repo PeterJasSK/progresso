@@ -19,15 +19,116 @@ from core.models import (
     Role,
     UnitSystem,
 )
-from core.services import blob_cleanup, photos
+from core.services import blob_cleanup, photos, roster
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Public user shape: id, username, role only. No password/email leak."""
+    """Public user shape + the trainee's linked trainer (P7 §5.3b).
+
+    ``head_trainer``/``head_trainer_name`` let the SPA show and manage a trainee's
+    coach link (self-service linking); both are read-only here — linking goes
+    through :class:`LinkTrainerSerializer` on ``PATCH /auth/me``. Null for trainers
+    and for unassigned (self-tracking) trainees. No password/email leak.
+    """
+
+    head_trainer_name = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser
-        fields = ("id", "username", "role")
+        fields = ("id", "username", "role", "head_trainer", "head_trainer_name")
+        read_only_fields = ("head_trainer",)
+
+    def get_head_trainer_name(self, obj: CustomUser) -> str | None:
+        trainer = obj.head_trainer
+        return (trainer.get_full_name() or trainer.username) if trainer else None
+
+
+class LinkTrainerSerializer(serializers.Serializer):
+    """Self-service trainer link/unlink for a trainee (P7 §5.3b).
+
+    ``trainer_id`` names an existing trainer to attach, or ``null`` to unlink (back
+    to self-tracking). Trainee-only + self-only — the view forces the target to
+    ``request.user`` (no ``?user=``). Error ``detail`` is a translation key
+    (epic Q6): ``invalid_trainer``.
+    """
+
+    trainer_id = serializers.IntegerField(allow_null=True)
+
+    def validate_trainer_id(self, value: int | None) -> int | None:
+        if value is None:
+            return None
+        trainer = CustomUser.objects.filter(
+            pk=value, role=Role.TRAINER
+        ).first()
+        if trainer is None:
+            raise serializers.ValidationError("invalid_trainer")
+        self._trainer = trainer
+        return value
+
+    def save(self, *, user: CustomUser) -> CustomUser:
+        user.head_trainer = (
+            None if self.validated_data["trainer_id"] is None else self._trainer
+        )
+        user.save(update_fields=["head_trainer"])
+        return user
+
+
+class RosterEntrySerializer(serializers.ModelSerializer):
+    """A trainer's roster row (P7 §5.1): the trainee + at-a-glance weight progress.
+
+    Read-only. ``last_measured_at``/``measurement_count`` are queryset annotations
+    (:func:`core.services.roster.roster_queryset`); ``latest_value``/``delta``/
+    ``trend`` are the weight readout over the two most recent entries, computed by
+    :func:`core.services.roster.weight_summary` from the prefetched history — no
+    per-row query. ``overdue`` is client-side (§11 Q4), not here. Primary metric is
+    weight (the headline metric, §11 Q2).
+    """
+
+    display_name = serializers.SerializerMethodField()
+    last_measured_at = serializers.DateField(read_only=True)
+    measurement_count = serializers.IntegerField(read_only=True)
+    primary_metric = serializers.SerializerMethodField()
+    latest_value = serializers.SerializerMethodField()
+    delta = serializers.SerializerMethodField()
+    trend = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CustomUser
+        fields = (
+            "id",
+            "username",
+            "display_name",
+            "role",
+            "last_measured_at",
+            "measurement_count",
+            "primary_metric",
+            "latest_value",
+            "delta",
+            "trend",
+        )
+
+    def get_display_name(self, obj: CustomUser) -> str:
+        return obj.get_full_name() or obj.username
+
+    def get_primary_metric(self, obj: CustomUser) -> str:
+        return "weight"
+
+    def _summary(self, obj: CustomUser) -> dict:
+        # Compute once per row, then reuse across the three method fields.
+        cached = getattr(obj, "_weight_summary", None)
+        if cached is None:
+            cached = roster.weight_summary(obj.measurements.all())
+            obj._weight_summary = cached
+        return cached
+
+    def get_latest_value(self, obj: CustomUser) -> float | None:
+        return self._summary(obj)["latest_value"]
+
+    def get_delta(self, obj: CustomUser) -> float | None:
+        return self._summary(obj)["delta"]
+
+    def get_trend(self, obj: CustomUser) -> str | None:
+        return self._summary(obj)["trend"]
 
 
 class TrainerOptionSerializer(serializers.ModelSerializer):
@@ -367,3 +468,18 @@ class GoalSerializer(serializers.ModelSerializer):
                 {"target_value": "target_out_of_range"}
             )
         return attrs
+
+
+class GoalToggleSerializer(serializers.ModelSerializer):
+    """Toggle-complete write path for a goal (P7 §5.2).
+
+    A single writable field — ``is_completed`` — so the owner trainee *or* the
+    trainer who owns the trainee can flip completion via ``PATCH /goals/:id``
+    without being able to rewrite the goal's metric/target/direction (those stay
+    owned by trainee-only create). The permission
+    (:class:`~core.api.permissions.GoalAccessPermission`) already admits the PATCH.
+    """
+
+    class Meta:
+        model = Goal
+        fields = ("id", "is_completed")

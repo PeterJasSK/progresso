@@ -9,12 +9,15 @@ import { formatDate } from '../i18n'
 
 interface MeasurementCardProps {
   measurement: Measurement
+  // Detail route override (P7 trainer views point at /trainer/...); defaults to
+  // the trainee's own detail route.
+  to?: string
 }
 
-export function MeasurementCard({ measurement }: MeasurementCardProps) {
+export function MeasurementCard({ measurement, to }: MeasurementCardProps) {
   const { t } = useTranslation()
   return (
-    <Link to={`/me/measurements/${measurement.id}`} className="block">
+    <Link to={to ?? `/me/measurements/${measurement.id}`} className="block">
       <Card className="flex items-center gap-4 transition-colors hover:border-accent">
         {measurement.thumbnail_url ? (
           <img

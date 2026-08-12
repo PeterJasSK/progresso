@@ -22,12 +22,16 @@ from core.models import CustomUser, Goal, Measurement, Role
 from core.api.permissions import (
     GoalAccessPermission,
     MeasurementAccessPermission,
+    TraineeRosterPermission,
 )
-from core.services import chart_data
+from core.services import chart_data, roster
 from core.api.serializers import (
     GoalSerializer,
+    GoalToggleSerializer,
+    LinkTrainerSerializer,
     MeasurementSerializer,
     RegisterSerializer,
+    RosterEntrySerializer,
     TrainerOptionSerializer,
     UserSerializer,
 )
@@ -104,11 +108,29 @@ class LogoutView(APIView):
 
 @method_decorator(ensure_csrf_cookie, name="get")
 class MeView(APIView):
-    """GET /auth/me — current user; seeds the csrftoken cookie for the SPA (AC-5)."""
+    """GET/PATCH /auth/me — current user; seeds the csrftoken cookie for the SPA.
+
+    ``PATCH`` is the trainee's self-service trainer link/unlink (P7 §5.3b):
+    ``{trainer_id: <id>|null}`` sets/clears **their own** ``head_trainer`` (null =
+    back to self-tracking). Trainee-only + self-only — the target is always
+    ``request.user``, never a ``?user=`` id, so no ``can_access`` is needed.
+    """
 
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
+        return Response(UserSerializer(request.user).data)
+
+    def patch(self, request: Request) -> Response:
+        if request.user.role != Role.TRAINEE:
+            # Only trainees have a head trainer; trainers self-track by definition.
+            return Response(
+                {"detail": "not_a_trainee"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        serializer = LinkTrainerSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=request.user)
         return Response(UserSerializer(request.user).data)
 
 
@@ -190,20 +212,56 @@ class GoalViewSet(TargetUserMixin, viewsets.ModelViewSet):
     """Goals list/create (P6). Thin: querysets, permissions, forced owner only.
 
     Access is resolved entirely through ``request.user.can_access`` via
-    :class:`GoalAccessPermission` (epic §3). P6 wires only ``list`` + ``create``;
-    the ``partial_update`` toggle-complete route is P7 (the permission already
-    admits it).
+    :class:`GoalAccessPermission` (epic §3). ``list`` + ``create`` are P6;
+    ``partial_update`` (toggle-complete) is P7 — the owner trainee *or* the trainer
+    who owns the trainee flips ``is_completed`` (the permission already admits it).
     """
 
     serializer_class = GoalSerializer
     permission_classes = [IsAuthenticated, GoalAccessPermission]
     parser_classes = [JSONParser]
 
+    def get_serializer_class(self):
+        # Toggle-complete writes only ``is_completed`` (P7); everything else uses
+        # the full goal shape.
+        if self.action == "partial_update":
+            return GoalToggleSerializer
+        return GoalSerializer
+
     def get_queryset(self) -> QuerySet[Goal]:
-        # Permission already asserted can_access(target); filter to it.
-        target = self.get_target_user(self.request)
-        return Goal.objects.filter(user=target).select_related("user")
+        user = self.request.user
+        if self.action == "list":
+            # Permission already asserted can_access(target); filter to it.
+            target = self.get_target_user(self.request)
+            return Goal.objects.filter(user=target).select_related("user")
+
+        # Detail actions (P7 PATCH): scope to rows this caller may reach so a
+        # trainer can toggle their own trainee's goal and an inaccessible id 404s
+        # (no existence leak, epic Q6). Mirrors MeasurementViewSet. The scoping
+        # rule lives on the model beside can_access — not re-encoded here (§10).
+        return Goal.objects.filter(
+            user.accessible_data_filter("user")
+        ).select_related("user")
 
     def perform_create(self, serializer: GoalSerializer) -> None:
         # Owner is forced to the caller — any ``user`` in the body is ignored.
         serializer.save(user=self.request.user)
+
+
+class TraineeViewSet(viewsets.ReadOnlyModelViewSet):
+    """Trainer roster read API (P7 §5.1): list own trainees + one trainee summary.
+
+    Trainer-only (:class:`TraineeRosterPermission`); every row is one of the
+    caller's own trainees, annotated with at-a-glance weight progress by the
+    roster service. Read-only — there is no account create/edit/delete: onboarding
+    is self-registration and a trainee links a trainer themselves (§5.3). A
+    non-owned id 404s because the queryset is limited to the caller's trainees (no
+    existence leak, epic Q6); ``can_access`` gates the object for defense-in-depth.
+    """
+
+    serializer_class = RosterEntrySerializer
+    permission_classes = [IsAuthenticated, TraineeRosterPermission]
+    parser_classes = [JSONParser]
+
+    def get_queryset(self) -> QuerySet[CustomUser]:
+        return roster.roster_queryset(self.request.user)

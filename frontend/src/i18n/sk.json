@@ -25,7 +25,15 @@
     "home": "Domov",
     "measurements": "Merania",
     "progress": "Pokrok",
-    "goals": "Ciele"
+    "goals": "Ciele",
+    "trainer": {
+      "roster": "Klienti",
+      "overview": "Prehľad",
+      "measurements": "Merania",
+      "progress": "Pokrok",
+      "photos": "Fotky",
+      "goals": "Ciele"
+    }
   },
   "roles": {
     "trainee": "Cvičenec",
@@ -77,10 +85,13 @@
     },
     "trainer": {
       "title": "Kokpit trénera",
-      "placeholder": "Toto je dočasná domovská stránka. Váš zoznam klientov a kokpit pribudnú čoskoro.",
-      "clients": "Aktívni klienti",
-      "checkins": "Dnešné prihlásenia",
-      "delta": "oproti včerajšku"
+      "delta": "oproti včerajšku",
+      "yourTrainer": "Váš tréner",
+      "none": "Bez trénera (sledujem sa sám)",
+      "pick": "Prepojiť trénera",
+      "pickPlaceholder": "— vyberte trénera —",
+      "link": "Prepojiť",
+      "unlink": "Zrušiť prepojenie"
     }
   },
   "measurements": {
@@ -133,12 +144,51 @@
       "submit": "Pridať cieľ"
     }
   },
+  "trainer": {
+    "roster": {
+      "title": "Moji klienti",
+      "lastLogged": "Naposledy zaznamenané",
+      "never": "nikdy",
+      "overdue": "Po termíne",
+      "empty": "Zatiaľ žiadni klienti. Objavia sa tu, keď sa klient zaregistruje a vyberie si vás, alebo vás prepojí zo svojej domovskej stránky.",
+      "addCta": "Pridať klienta"
+    },
+    "addTrainee": {
+      "title": "Pridať klienta",
+      "intro": "Klienti sa pridávajú sami registráciou — nie je potrebné vytvárať účet.",
+      "step1": "Zdieľajte s klientom odkaz na registráciu nižšie.",
+      "step2": "Vytvorí si účet a vyberie si vás ako trénera (alebo pole nechá prázdne a prepojí vás neskôr).",
+      "step3": "Po prepojení sa automaticky objaví vo vašom zozname klientov.",
+      "signupLink": "Odkaz na registráciu",
+      "yourName": "Vaše meno (aby vás našli)"
+    },
+    "overview": {
+      "notFound": "Tohto klienta sa nepodarilo nájsť.",
+      "noData": "Zatiaľ žiadne zaznamenané merania."
+    },
+    "measurements": {
+      "empty": "Zatiaľ žiadne zaznamenané merania."
+    },
+    "photos": {
+      "title": "Porovnanie fotiek",
+      "before": "Pred",
+      "after": "Po",
+      "pick": "Vyberte dátum na porovnanie.",
+      "empty": "Zatiaľ žiadne fotky pokroku."
+    },
+    "goals": {
+      "empty": "Zatiaľ žiadne ciele.",
+      "markComplete": "Označiť ako splnené",
+      "reopen": "Znovu otvoriť"
+    }
+  },
   "errors": {
     "invalid_credentials": "Nesprávne používateľské meno alebo heslo.",
     "username_taken": "Toto používateľské meno je už obsadené.",
     "password_too_weak": "Toto heslo je príliš slabé. Skúste dlhšie.",
     "invalid_trainer": "Takého trénera sa nepodarilo nájsť.",
     "invalid_role": "Táto rola nie je povolená.",
+    "not_a_trainee": "Len cvičenci môžu prepojiť trénera.",
     "no_values": "Zadajte aspoň jednu nameranú hodnotu.",
     "out_of_range": "Jedna z hodnôt je mimo povoleného rozsahu.",
     "invalid_unit_system": "Táto sústava jednotiek nie je platná.",

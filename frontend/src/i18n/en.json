@@ -25,7 +25,15 @@
     "home": "Home",
     "measurements": "Measurements",
     "progress": "Progress",
-    "goals": "Goals"
+    "goals": "Goals",
+    "trainer": {
+      "roster": "Roster",
+      "overview": "Overview",
+      "measurements": "Measurements",
+      "progress": "Progress",
+      "photos": "Photos",
+      "goals": "Goals"
+    }
   },
   "roles": {
     "trainee": "Trainee",
@@ -77,10 +85,13 @@
     },
     "trainer": {
       "title": "Trainer cockpit",
-      "placeholder": "This is a placeholder home. Your roster and cockpit land here soon.",
-      "clients": "Active clients",
-      "checkins": "Check-ins today",
-      "delta": "vs yesterday"
+      "delta": "vs yesterday",
+      "yourTrainer": "Your trainer",
+      "none": "No trainer (tracking myself)",
+      "pick": "Link a trainer",
+      "pickPlaceholder": "— choose a trainer —",
+      "link": "Link",
+      "unlink": "Unlink"
     }
   },
   "measurements": {
@@ -133,12 +144,51 @@
       "submit": "Add goal"
     }
   },
+  "trainer": {
+    "roster": {
+      "title": "My trainees",
+      "lastLogged": "Last logged",
+      "never": "never",
+      "overdue": "Overdue",
+      "empty": "No trainees yet. They appear here once a client registers and selects you, or links you from their home.",
+      "addCta": "Add a trainee"
+    },
+    "addTrainee": {
+      "title": "Add a trainee",
+      "intro": "Clients join by signing up themselves — no account creation needed.",
+      "step1": "Share the signup link below with your client.",
+      "step2": "They create an account and pick you as their trainer (or leave it blank and link you later).",
+      "step3": "Once linked, they appear on your roster automatically.",
+      "signupLink": "Signup link",
+      "yourName": "Your name (so they can find you)"
+    },
+    "overview": {
+      "notFound": "That trainee could not be found.",
+      "noData": "No measurements logged yet."
+    },
+    "measurements": {
+      "empty": "No measurements logged yet."
+    },
+    "photos": {
+      "title": "Photo compare",
+      "before": "Before",
+      "after": "After",
+      "pick": "Pick a date to compare.",
+      "empty": "No progress photos yet."
+    },
+    "goals": {
+      "empty": "No goals yet.",
+      "markComplete": "Mark complete",
+      "reopen": "Reopen"
+    }
+  },
   "errors": {
     "invalid_credentials": "Incorrect username or password.",
     "username_taken": "That username is already taken.",
     "password_too_weak": "That password is too weak. Try a longer one.",
     "invalid_trainer": "That trainer could not be found.",
     "invalid_role": "That role is not allowed.",
+    "not_a_trainee": "Only trainees can link a trainer.",
     "no_values": "Enter at least one measurement value.",
     "out_of_range": "One of the values is out of the allowed range.",
     "invalid_unit_system": "That unit system is not valid.",

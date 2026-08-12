@@ -58,6 +58,28 @@ class IsTrainee(BasePermission):
         )
 
 
+class TraineeRosterPermission(BasePermission):
+    """Access gate for the trainer roster (P7 §5.1).
+
+    Endpoint gating: the roster (``GET /trainees[/:id]``) is **trainer-only** — a
+    trainee gets 403. Object access still delegates to ``can_access`` for
+    defense-in-depth, though the viewset queryset already limits rows to the
+    caller's own trainees (a non-owned id 404s, no existence leak — epic Q6). The
+    trainer->trainee rule itself is never re-encoded here (epic §3).
+    """
+
+    def has_permission(self, request: Request, view: APIView) -> bool:
+        user = request.user
+        return bool(
+            user and user.is_authenticated and user.role == Role.TRAINER
+        )
+
+    def has_object_permission(
+        self, request: Request, view: APIView, obj: object
+    ) -> bool:
+        return request.user.can_access(obj)
+
+
 class MeasurementAccessPermission(BasePermission):
     """Access gate for measurements — all reads delegate to ``can_access``.
 

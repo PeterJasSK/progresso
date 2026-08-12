@@ -1,8 +1,11 @@
 // One goal as a card: metric label + target (mono + unit), direction arrow,
-// optional deadline, status pill, and the note. Status toggle is P7.
+// optional deadline, status pill, and the note. When `onToggle` is supplied (P7
+// trainer goals screen), a control flips completion; without it the card stays
+// display-only (P6 trainee list — unchanged).
 import { useTranslation } from 'react-i18next'
 import { Card } from './Card'
 import { Pill } from './Pill'
+import { Button } from './Button'
 import type { Goal } from '../lib/goals'
 import { METRIC_BY_KEY } from '../lib/metricMeta'
 import { formatWithUnit } from '../lib/format'
@@ -10,9 +13,12 @@ import { formatDate } from '../i18n'
 
 interface GoalCardProps {
   goal: Goal
+  // Flip completion (P7). Omitted → the card is display-only.
+  onToggle?: (goal: Goal) => void
+  toggling?: boolean
 }
 
-export function GoalCard({ goal }: GoalCardProps) {
+export function GoalCard({ goal, onToggle, toggling = false }: GoalCardProps) {
   const { t } = useTranslation()
   const meta = METRIC_BY_KEY[goal.metric]
   const arrow = goal.direction === 'increase' ? '▲' : '▼'
@@ -26,6 +32,18 @@ export function GoalCard({ goal }: GoalCardProps) {
         <Pill variant={goal.is_completed ? 'ok' : 'accent'}>
           {goal.is_completed ? t('goals.status.completed') : t('goals.status.active')}
         </Pill>
+        {onToggle && (
+          <Button
+            variant="ghost"
+            className="ml-auto"
+            disabled={toggling}
+            onClick={() => onToggle(goal)}
+          >
+            {goal.is_completed
+              ? t('trainer.goals.reopen')
+              : t('trainer.goals.markComplete')}
+          </Button>
+        )}
       </div>
       <div className="font-mono text-sm text-text">
         <span className="text-muted">{arrow}</span>{' '}
