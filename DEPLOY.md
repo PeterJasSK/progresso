@@ -49,11 +49,18 @@ docker run -p 8000:8000 \
   progresso
 ```
 
-## Vercel
+## Vercel (Vercel Postgres + Blob)
 
-`vercel.json` builds the SPA + collects static and routes `/api` + `/admin` to Django and everything else to
-the SPA shell. Set the env vars above in the Vercel project. The only Vercel-specific dependency is the
-pluggable Blob storage backend (`core/services/blob.py`); nothing else is host-locked.
+The SPA builds to `frontend/dist` and is served as static from Vercel's CDN; Django runs as a Python
+serverless function (`api/index.py`) reached only for `/api`, `/admin`, `/static` (see `vercel.json`
+`rewrites`). Vercel Postgres injects `POSTGRES_URL` — `prod.py` maps it to `DATABASE_URL`, uses `conn_max_age=0`
+and disables prepared statements (pooler-safe). WhiteNoise serves admin static via finders (no build-time
+`collectstatic` needed).
+
+Set env vars in the project (Production): `DJANGO_SETTINGS_MODULE=progresso.settings.prod`, `SECRET_KEY`,
+`ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS` (scheme included). `BLOB_READ_WRITE_TOKEN` and `POSTGRES_URL` are
+auto-injected when the Blob store and Postgres DB are linked. Run `migrate` + `createsuperuser` yourself
+against `POSTGRES_URL_NON_POOLING` (Vercel does not run migrations). Full walkthrough: see the deploy guide.
 
 ## Serving model
 

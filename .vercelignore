@@ -1,0 +1,14 @@
+# Keep the Vercel upload lean — none of this belongs in the build.
+venv/
+env/
+.venv/
+db.sqlite3
+media/
+staticfiles/
+frontend/node_modules/
+frontend/dev-dist/
+.git/
+.idea/
+.claude/
+tasks/
+*.log
