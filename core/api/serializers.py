@@ -11,6 +11,7 @@ from django.contrib.auth import password_validation
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from rest_framework import serializers
+from rest_framework.reverse import reverse
 
 from core.models import (
     CustomUser,
@@ -249,9 +250,12 @@ class MeasurementSerializer(serializers.ModelSerializer):
     are translation *keys* (epic Q6): ``out_of_range``, ``no_values``,
     ``invalid_unit_system``, ``invalid_image``, ``photo_too_large``.
 
-    Progress photo (P3): ``photo`` is a write-only upload; ``photo_url`` and
-    ``thumbnail_url`` are read-only Blob public URLs carried in every payload
-    (AC-6). The upload is validated + thumbnailed + pushed to Blob by
+    Progress photo (P3/P13): ``photo`` is a write-only upload. ``photo_url`` and
+    ``thumbnail_url`` are read-only **same-origin proxy** URLs
+    (``/api/v1/measurements/<id>/photo``, ``.../thumbnail``), never the raw
+    private Blob URL (P13 AC-3) — the SPA renders them via ``<img src>`` and the
+    session cookie authenticates the image GET. ``None`` when the row has no
+    photo. The upload is validated + thumbnailed + pushed to Blob by
     :mod:`core.services.photos` on create/update — the view stays thin (§5.4).
     """
 
@@ -277,6 +281,12 @@ class MeasurementSerializer(serializers.ModelSerializer):
     # (plan §5.7, §11 Q6). The ``series`` endpoint does not use this serializer.
     bmi = serializers.SerializerMethodField()
 
+    # P13: never surface the raw private Blob URL. Both fields keep their P3 names
+    # (zero front-end change) but now resolve to same-origin proxy endpoints that
+    # re-check ``can_access`` on every read. ``None`` for a photo-less row.
+    photo_url = serializers.SerializerMethodField()
+    thumbnail_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Measurement
         fields = (
@@ -298,12 +308,12 @@ class MeasurementSerializer(serializers.ModelSerializer):
             "photo_url",
             "thumbnail_url",
         )
+        # photo_url/thumbnail_url are SerializerMethodFields (implicitly
+        # read-only) so they are not listed here — DRF forbids doing both.
         read_only_fields = (
             "user",
             "created_at",
             "bmi",
-            "photo_url",
-            "thumbnail_url",
         )
 
     def __init__(self, *args, **kwargs) -> None:
@@ -352,6 +362,25 @@ class MeasurementSerializer(serializers.ModelSerializer):
         """Serialize the model's computed BMI as a JSON number (§5.7)."""
         value = obj.bmi
         return None if value is None else float(value)
+
+    def get_photo_url(self, obj: Measurement) -> str | None:
+        """Same-origin proxy URL for the full photo (P13); ``None`` if absent."""
+        return self._proxy_url(obj, obj.photo_url, "measurement-photo")
+
+    def get_thumbnail_url(self, obj: Measurement) -> str | None:
+        """Same-origin proxy URL for the thumbnail (P13); ``None`` if absent."""
+        return self._proxy_url(obj, obj.thumbnail_url, "measurement-thumbnail")
+
+    def _proxy_url(
+        self, obj: Measurement, stored: str, view_name: str
+    ) -> str | None:
+        # Empty stored URL => no photo. Never emit the raw private Blob URL
+        # (AC-3); build an absolute same-origin proxy link when ``request`` is in
+        # context, falling back to a relative one otherwise (e.g. /me/export).
+        if not stored:
+            return None
+        request = self.context.get("request")
+        return reverse(view_name, args=[obj.pk], request=request)
 
     def validate(self, attrs: dict) -> dict:
         creating = self.instance is None

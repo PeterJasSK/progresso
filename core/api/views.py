@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from django.contrib.auth import authenticate, login, logout
 from django.db.models import Q, QuerySet
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -29,7 +29,7 @@ from core.api.permissions import (
     MessageAccessPermission,
     TraineeRosterPermission,
 )
-from core.services import chart_data, roster
+from core.services import blob, chart_data, roster
 from core.api.serializers import (
     GoalSerializer,
     GoalToggleSerializer,
@@ -195,7 +195,8 @@ class MeasurementViewSet(TargetUserMixin, viewsets.ModelViewSet):
         ``can_access`` predicate as ``list`` (``get_target_user`` +
         :class:`MeasurementAccessPermission`). Payload already carries
         ``photo_url``/``thumbnail_url`` + dates + id — everything the picker
-        needs. Bytes come straight from the Blob public URL (no proxy).
+        needs. Those URLs are same-origin proxy links (P13); bytes stream through
+        ``thumbnail_file``/``photo_file`` below, gated by ``can_access``.
         """
         target = self.get_target_user(request)
         queryset = (
@@ -209,6 +210,35 @@ class MeasurementViewSet(TargetUserMixin, viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+    def photo_file(self, request: Request, pk: int | None = None) -> HttpResponse:
+        """GET /measurements/:id/photo — stream the private full photo (P13).
+
+        Same ``can_access`` gate as every other detail read: ``get_object`` runs
+        ``get_queryset`` (``accessible_data_filter``) + ``check_object_permissions``
+        (:class:`MeasurementAccessPermission` -> ``can_access(obj.user)`` for the
+        SAFE GET), so a stranger/unauthenticated caller gets 404/403 (no existence
+        leak). Bytes are fetched with the RW token and streamed back — the raw
+        private Blob URL never leaves the server (AC-2, AC-3).
+        """
+        return self._serve_blob(self.get_object().photo_url)
+
+    def thumbnail_file(
+        self, request: Request, pk: int | None = None
+    ) -> HttpResponse:
+        """GET /measurements/:id/thumbnail — stream the private thumbnail (P13)."""
+        return self._serve_blob(self.get_object().thumbnail_url)
+
+    def _serve_blob(self, url: str) -> HttpResponse:
+        # Photos are JPEG-normalized by the photos service, so the content type is
+        # fixed. Empty URL => the row has no photo -> 404. ``private, max-age=3600``
+        # lets the browser cache the immutable image without any shared cache
+        # holding a private body (plan §3.2, Q2).
+        if not url:
+            raise Http404
+        response = HttpResponse(blob.get_bytes(url), content_type="image/jpeg")
+        response["Cache-Control"] = "private, max-age=3600"
+        return response
 
     def series(self, request: Request) -> Response:
         """GET /measurements/series?user=:id — server-computed chart series (P4).
@@ -392,7 +422,9 @@ class MeExportView(APIView):
     """GET /me/export — the caller's own data as one JSON document (P8 §5.6, AC-9).
 
     Self-only (no ``?user=``, no ``can_access`` — you can only export yourself).
-    Photos are Blob **URLs**, not bytes. Any role may export its own data.
+    Photos are same-origin proxy **URLs**, not bytes, and never the raw private
+    Blob URL (P13 AC-3) — the serializer needs ``request`` in context to build
+    them. Any role may export its own data.
     """
 
     permission_classes = [IsAuthenticated]
@@ -409,7 +441,9 @@ class MeExportView(APIView):
         return Response(
             {
                 "profile": UserSerializer(user).data,
-                "measurements": MeasurementSerializer(measurements, many=True).data,
+                "measurements": MeasurementSerializer(
+                    measurements, many=True, context={"request": request}
+                ).data,
                 "goals": GoalSerializer(goals, many=True).data,
                 "messages": MessageSerializer(
                     messages, many=True, context={"request": request}

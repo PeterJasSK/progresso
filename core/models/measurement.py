@@ -127,8 +127,11 @@ class Measurement(models.Model):
     measured_at = models.DateField(default=timezone.localdate)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    # Progress photo (P3). Vercel Blob public URLs — full image + generated
-    # thumbnail — set together at the serializer boundary. Empty string means "no
+    # Progress photo (P3/P13). Vercel Blob **private** store URLs — full image +
+    # generated thumbnail — set together at the serializer boundary. These are
+    # server-side only: never world-readable and never surfaced raw in the API;
+    # the serializer maps them to same-origin proxy URLs and reads stream through
+    # ``blob.get_bytes`` gated by ``can_access`` (P13). Empty string means "no
     # photo" (keeps the ``exclude(photo_url="")`` feed filter simple and avoids
     # nullable-URL ambiguity). No ImageField/FileField: the bytes live in Blob,
     # not a Django storage round-trip; the delete API takes the URL directly, so

@@ -39,7 +39,13 @@ def _token() -> str | None:
 
 
 def put(pathname: str, data: bytes, content_type: str) -> str:
-    """Upload ``data`` to Blob and return the public URL.
+    """Upload ``data`` to Blob (private) and return its store URL.
+
+    The blob is marked **private** via ``x-vercel-blob-access: private`` (P13):
+    the live store is a private store, which rejects a default-public PUT with
+    ``400 "Cannot use public access on a private store."``. The returned URL is
+    not world-readable — reads go through the authenticated :func:`get_bytes`
+    proxy, gated by ``can_access``.
 
     With no token, writes under ``MEDIA_ROOT`` and returns a ``MEDIA_URL`` path
     (dev fallback). The random suffix is left on so URLs stay unguessable.
@@ -57,6 +63,7 @@ def put(pathname: str, data: bytes, content_type: str) -> str:
             "x-api-version": _API_VERSION,
             "x-content-type": content_type,
             "x-add-random-suffix": "1",
+            "x-vercel-blob-access": "private",
         },
     )
     try:
@@ -72,6 +79,39 @@ def put(pathname: str, data: bytes, content_type: str) -> str:
         logger.exception("Blob upload failed for %s", pathname)
         raise BlobUploadError(str(exc)) from exc
     return payload["url"]
+
+
+def get_bytes(url: str) -> bytes:
+    """Fetch the bytes of a (private) blob by its store URL.
+
+    A private blob is not world-readable, so the read is an authenticated GET
+    (``Authorization: Bearer`` + ``x-api-version``) — the mirror of :func:`put`.
+    With no token, reads from ``MEDIA_ROOT`` (stripping the ``MEDIA_URL`` prefix
+    off the stored path), the dev filesystem fallback. HTTP/URL failures are
+    wrapped in :class:`BlobUploadError` and logged verbatim.
+    """
+    token = _token()
+    if token is None:
+        return _fs_get(url)
+
+    request = urllib.request.Request(
+        url,
+        method="GET",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "x-api-version": _API_VERSION,
+        },
+    )
+    try:
+        with urllib.request.urlopen(request) as response:
+            return response.read()
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", "replace")
+        logger.error("Blob fetch failed for %s: HTTP %s %s", url, exc.code, body)
+        raise BlobUploadError(f"HTTP {exc.code}: {body}") from exc
+    except urllib.error.URLError as exc:
+        logger.exception("Blob fetch failed for %s", url)
+        raise BlobUploadError(str(exc)) from exc
 
 
 def delete(url: str) -> None:
@@ -113,6 +153,18 @@ def _fs_put(pathname: str, data: bytes) -> str:
     storage = _fs_storage()
     saved = storage.save(pathname, ContentFile(data))
     return storage.url(saved)
+
+
+def _fs_get(url: str) -> bytes:
+    from django.conf import settings
+
+    prefix = settings.MEDIA_URL
+    name = url[len(prefix):] if url.startswith(prefix) else url
+    storage = _fs_storage()
+    if not storage.exists(name):
+        raise BlobUploadError(f"blob not found: {name}")
+    with storage.open(name, "rb") as handle:
+        return handle.read()
 
 
 def _fs_delete(url: str) -> None:

@@ -29,6 +29,12 @@ _measurement_detail = MeasurementViewSet.as_view(
 )
 _measurement_photos = MeasurementViewSet.as_view({"get": "photos"})
 _measurement_series = MeasurementViewSet.as_view({"get": "series"})
+# P13: authenticated same-origin proxy for the private photo bytes. Bound as
+# viewset detail methods so ``get_object`` runs the ``can_access`` gate.
+_measurement_photo_file = MeasurementViewSet.as_view({"get": "photo_file"})
+_measurement_thumbnail_file = MeasurementViewSet.as_view(
+    {"get": "thumbnail_file"}
+)
 # P6: goals list/create. P7 adds the ``goals/<int:pk>`` PATCH toggle-complete
 # route — owner trainee or owning trainer flips ``is_completed``.
 _goal_list = GoalViewSet.as_view({"get": "list", "post": "create"})
@@ -53,6 +59,17 @@ urlpatterns = [
         "measurements/<int:pk>",
         _measurement_detail,
         name="measurement-detail",
+    ),
+    # P13: private-photo proxy reads (full + thumbnail), same-origin, cookie-auth.
+    path(
+        "measurements/<int:pk>/photo",
+        _measurement_photo_file,
+        name="measurement-photo",
+    ),
+    path(
+        "measurements/<int:pk>/thumbnail",
+        _measurement_thumbnail_file,
+        name="measurement-thumbnail",
     ),
     path("goals", _goal_list, name="goal-list"),
     path("goals/<int:pk>", _goal_detail, name="goal-detail"),
