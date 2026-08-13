@@ -17,6 +17,7 @@ import {
   updateMeasurement,
 } from '../lib/measurements'
 import { VALUE_METRICS } from '../lib/metricMeta'
+import { downscaleImage } from '../lib/imageResize'
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10)
@@ -79,7 +80,7 @@ export function MeasurementForm() {
       const raw = values[meta.key]
       if (raw !== undefined && raw.trim() !== '') form.append(meta.key, raw.trim())
     }
-    if (photo) form.append('photo', photo)
+    if (photo) form.append('photo', await downscaleImage(photo))
 
     try {
       if (editing && measurementId !== null) {

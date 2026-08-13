@@ -38,6 +38,7 @@
   },
   "nav": {
     "logout": "Odhlásiť sa",
+    "menu": "Menu",
     "home": "Domov",
     "measurements": "Merania",
     "progress": "Pokrok",
@@ -246,6 +247,7 @@
     "invalid_unit_system": "Táto sústava jednotiek nie je platná.",
     "invalid_image": "Tento obrázok sa nepodarilo načítať. Skúste inú fotku.",
     "photo_too_large": "Táto fotka je príliš veľká. Skúste menšiu.",
+    "photo_upload_failed": "Fotku sa nepodarilo nahrať. Skúste to znova.",
     "invalid_metric": "Táto metrika nie je platná.",
     "invalid_direction": "Tento smer nie je platný.",
     "missing_target": "Zadajte cieľovú hodnotu.",

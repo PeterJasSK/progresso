@@ -10,6 +10,7 @@ import { ThemeToggle } from './ThemeToggle'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { Avatar } from './Avatar'
 import { Button } from './Button'
+import { MobileMenu } from './MobileMenu'
 
 interface AppShellProps {
   children: ReactNode
@@ -43,7 +44,7 @@ export function AppShell({ children, actionBar }: AppShellProps) {
               <span className="text-accent">◆</span> {t('app.name').toUpperCase()}
             </span>
           )}
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto hidden items-center gap-2 md:flex">
             <LanguageSwitcher />
             <ThemeToggle />
             {user && (
@@ -59,6 +60,8 @@ export function AppShell({ children, actionBar }: AppShellProps) {
               {t('nav.logout')}
             </Button>
           </div>
+
+          <MobileMenu user={user} onLogout={handleLogout} />
         </div>
       </header>
 

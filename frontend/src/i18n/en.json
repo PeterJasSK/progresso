@@ -38,6 +38,7 @@
   },
   "nav": {
     "logout": "Log out",
+    "menu": "Menu",
     "home": "Home",
     "measurements": "Measurements",
     "progress": "Progress",
@@ -246,6 +247,7 @@
     "invalid_unit_system": "That unit system is not valid.",
     "invalid_image": "That image could not be read. Try another photo.",
     "photo_too_large": "That photo is too large. Try a smaller one.",
+    "photo_upload_failed": "The photo could not be uploaded. Please try again.",
     "invalid_metric": "That metric is not valid.",
     "invalid_direction": "That direction is not valid.",
     "missing_target": "Enter a target value.",

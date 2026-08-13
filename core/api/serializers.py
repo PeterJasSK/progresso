@@ -22,7 +22,7 @@ from core.models import (
     Role,
     UnitSystem,
 )
-from core.services import blob_cleanup, photos, roster
+from core.services import blob, blob_cleanup, photos, roster
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -411,6 +411,8 @@ class MeasurementSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"photo": "photo_too_large"})
         except photos.InvalidImage:
             raise serializers.ValidationError({"photo": "invalid_image"})
+        except blob.BlobUploadError:
+            raise serializers.ValidationError({"photo": "photo_upload_failed"})
 
     def create(self, validated_data: dict) -> Measurement:
         photo = validated_data.pop("photo", None)

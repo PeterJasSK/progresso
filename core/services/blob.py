@@ -14,14 +14,22 @@ storage under ``MEDIA_ROOT`` so ``runserver`` works with no Blob account (§5.2,
 from __future__ import annotations
 
 import json
+import logging
 import os
+import urllib.error
 import urllib.request
+
+logger = logging.getLogger(__name__)
 
 # Vercel Blob HTTP API. The surface (host, headers, version) is small and lives
 # only here, so pinning it against Vercel's current API is a one-file change.
 _BASE_URL = "https://blob.vercel-storage.com"
-_API_VERSION = "7"
+_API_VERSION = "12"
 _TOKEN_ENV = "BLOB_READ_WRITE_TOKEN"
+
+
+class BlobUploadError(RuntimeError):
+    """A Blob HTTP request failed (network or non-2xx response)."""
 
 
 def _token() -> str | None:
@@ -51,8 +59,12 @@ def put(pathname: str, data: bytes, content_type: str) -> str:
             "x-add-random-suffix": "1",
         },
     )
-    with urllib.request.urlopen(request) as response:
-        payload = json.loads(response.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(request) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except (urllib.error.HTTPError, urllib.error.URLError) as exc:
+        logger.exception("Blob upload failed for %s", pathname)
+        raise BlobUploadError(str(exc)) from exc
     return payload["url"]
 
 
