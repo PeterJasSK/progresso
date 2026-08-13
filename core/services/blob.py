@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import urllib.error
+import urllib.parse
 import urllib.request
 
 logger = logging.getLogger(__name__)
@@ -54,8 +55,13 @@ def put(pathname: str, data: bytes, content_type: str) -> str:
     if token is None:
         return _fs_put(pathname, data)
 
+    # Blob API v12 takes the pathname as a ``?pathname=`` query param (URL-encoded,
+    # slashes become %2F), not in the URL path — the PUT target is ``/?pathname=…``.
+    # Sending it in the path makes the server read an empty pathname -> HTTP 400
+    # "Invalid pathname". Mirrors the SDK's ``PUT /?${URLSearchParams({pathname})}``.
+    query = urllib.parse.urlencode({"pathname": pathname})
     request = urllib.request.Request(
-        f"{_BASE_URL}/{pathname}",
+        f"{_BASE_URL}/?{query}",
         data=data,
         method="PUT",
         headers={
@@ -94,13 +100,14 @@ def get_bytes(url: str) -> bytes:
     if token is None:
         return _fs_get(url)
 
+    # Private blobs are read straight off the store's CDN host
+    # (``<storeId>.private.blob.vercel-storage.com/<pathname>`` — exactly the URL
+    # ``put`` returned) with only a Bearer token; no ``x-api-version`` (that is a
+    # control-plane header, not a storage-GET one). Mirrors the SDK's ``get``.
     request = urllib.request.Request(
         url,
         method="GET",
-        headers={
-            "Authorization": f"Bearer {token}",
-            "x-api-version": _API_VERSION,
-        },
+        headers={"Authorization": f"Bearer {token}"},
     )
     try:
         with urllib.request.urlopen(request) as response:
