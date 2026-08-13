@@ -62,7 +62,13 @@ def put(pathname: str, data: bytes, content_type: str) -> str:
     try:
         with urllib.request.urlopen(request) as response:
             payload = json.loads(response.read().decode("utf-8"))
-    except (urllib.error.HTTPError, urllib.error.URLError) as exc:
+    except urllib.error.HTTPError as exc:
+        # Vercel Blob returns a JSON error body — log it verbatim so prod stdout
+        # says *why* (bad token, wrong api-version, quota, etc.), not just the code.
+        body = exc.read().decode("utf-8", "replace")
+        logger.error("Blob upload failed for %s: HTTP %s %s", pathname, exc.code, body)
+        raise BlobUploadError(f"HTTP {exc.code}: {body}") from exc
+    except urllib.error.URLError as exc:
         logger.exception("Blob upload failed for %s", pathname)
         raise BlobUploadError(str(exc)) from exc
     return payload["url"]
